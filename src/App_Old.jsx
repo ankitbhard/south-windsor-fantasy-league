@@ -1,6 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DraftProvider } from './context/DraftContext';
-import Invite from './pages/Invite';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Draft from './pages/Draft';
@@ -12,8 +11,7 @@ function App() {
     <DraftProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Invite />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/draft" element={<Draft />} />
           <Route path="/team" element={<Team />} />
