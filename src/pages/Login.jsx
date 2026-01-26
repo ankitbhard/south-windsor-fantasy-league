@@ -22,7 +22,7 @@ export default function Login() {
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
       >
         <h1 className="text-2xl font-bold mb-6 text-center">
-          Fantasy Cricket Login
+          South Windsor Desi Boys Cricket Login
         </h1>
         {/* Email */}
         <div className="mb-4">
