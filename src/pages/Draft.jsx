@@ -1,9 +1,17 @@
 import { useState, useContext } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { DraftContext } from "../context/DraftContext"
 
 export default function Draft() {
-  const { saveDraft } = useContext(DraftContext)
+  const navigate = useNavigate()
+  const { saveDraft, getUserDraft } = useContext(DraftContext)
+  
+  // Get current user info
+  const userEmail = localStorage.getItem('userEmail') || 'anonymous'
+  const userId = localStorage.getItem('userId') || 'user-' + Date.now()
+
+  // Load existing draft for this user if any
+  const existingDraft = getUserDraft(userId)
   
   const [matches] = useState([
     { id: 1, team1: "India", team2: "Pakistan" },
@@ -25,88 +33,53 @@ export default function Draft() {
     { id: 3, name: "Suryakumar Yadav", team: "India", role: "batsman" },
     { id: 4, name: "Hardik Pandya", team: "India", role: "batsman" },
     { id: 5, name: "Axar Patel", team: "India", role: "batsman" },
-
-    // India Bowlers
     { id: 6, name: "Jasprit Bumrah", team: "India", role: "bowler" },
     { id: 7, name: "Yuzvendra Chahal", team: "India", role: "bowler" },
     { id: 8, name: "Mohammed Siraj", team: "India", role: "bowler" },
-
-    // Pakistan Batsmen
     { id: 9, name: "Babar Azam", team: "Pakistan", role: "batsman" },
     { id: 10, name: "Fakhar Zaman", team: "Pakistan", role: "batsman" },
-
-    // Pakistan Bowlers
     { id: 11, name: "Shaheen Afridi", team: "Pakistan", role: "bowler" },
     { id: 12, name: "Hasan Ali", team: "Pakistan", role: "bowler" },
-
-    // Australia Batsmen
     { id: 13, name: "Steve Smith", team: "Australia", role: "batsman" },
     { id: 14, name: "David Warner", team: "Australia", role: "batsman" },
-
-    // Australia Bowlers
     { id: 15, name: "Pat Cummins", team: "Australia", role: "bowler" },
     { id: 16, name: "Josh Hazlewood", team: "Australia", role: "bowler" },
-
-    // South Africa Batsmen
     { id: 17, name: "Aiden Markram", team: "South Africa", role: "batsman" },
     { id: 18, name: "Reeza Hendricks", team: "South Africa", role: "batsman" },
-
-    // South Africa Bowlers
     { id: 19, name: "Anrich Nortje", team: "South Africa", role: "bowler" },
     { id: 20, name: "Kagiso Rabada", team: "South Africa", role: "bowler" },
-
-    // England Batsmen
     { id: 21, name: "Jos Buttler", team: "England", role: "batsman" },
     { id: 22, name: "Liam Livingstone", team: "England", role: "batsman" },
-
-    // England Bowlers
     { id: 23, name: "Jofra Archer", team: "England", role: "bowler" },
     { id: 24, name: "Adil Rashid", team: "England", role: "bowler" },
-
-    // West Indies Batsmen
     { id: 25, name: "Nicholas Pooran", team: "West Indies", role: "batsman" },
     { id: 26, name: "Roston Chase", team: "West Indies", role: "batsman" },
-
-    // West Indies Bowlers
     { id: 27, name: "Romesh Shepherd", team: "West Indies", role: "bowler" },
     { id: 28, name: "Akeal Hosein", team: "West Indies", role: "bowler" },
-
-    // Sri Lanka Batsmen
     { id: 29, name: "Angelo Mathews", team: "Sri Lanka", role: "batsman" },
     { id: 30, name: "Pathum Nissanka", team: "Sri Lanka", role: "batsman" },
-
-    // Sri Lanka Bowlers
     { id: 31, name: "Wanindu Hasaranga", team: "Sri Lanka", role: "bowler" },
     { id: 32, name: "Lahiru Kumara", team: "Sri Lanka", role: "bowler" },
-
-    // Afghanistan Batsmen
     { id: 33, name: "Mohammad Nabi", team: "Afghanistan", role: "batsman" },
     { id: 34, name: "Rahmanullah Gurbaz", team: "Afghanistan", role: "batsman" },
-
-    // Afghanistan Bowlers
     { id: 35, name: "Rashid Khan", team: "Afghanistan", role: "bowler" },
     { id: 36, name: "Naveen-ul-Haq", team: "Afghanistan", role: "bowler" },
-
-    // USA Batsmen
     { id: 37, name: "Ishan Malhotra", team: "USA", role: "batsman" },
     { id: 38, name: "Aaron Jones", team: "USA", role: "batsman" },
-
-    // USA Bowlers
     { id: 39, name: "Ali Khan", team: "USA", role: "bowler" },
     { id: 40, name: "Harmeet Singh", team: "USA", role: "bowler" },
-
-    // Scotland Batsmen
     { id: 41, name: "Kyle Coetzer", team: "Scotland", role: "batsman" },
     { id: 42, name: "Richie Berrington", team: "Scotland", role: "batsman" },
-
-    // Scotland Bowlers
     { id: 43, name: "Mark Watt", team: "Scotland", role: "bowler" },
     { id: 44, name: "Chris Sole", team: "Scotland", role: "bowler" },
   ])
 
-  const [draftSelections, setDraftSelections] = useState({})
-  const [selectedPlayers, setSelectedPlayers] = useState([])
-  const [winnerPredictions, setWinnerPredictions] = useState({})
+  // Initialize with existing draft or empty state
+  const [draftSelections, setDraftSelections] = useState(existingDraft?.draftSelections.players || {})
+  const [winnerPredictions, setWinnerPredictions] = useState(existingDraft?.draftSelections.winners || {})
+  const [selectedPlayers, setSelectedPlayers] = useState(
+    existingDraft ? Object.values(existingDraft.draftSelections.players || {}) : []
+  )
 
   const handlePlayerSelect = (matchId, role, player) => {
     // Check if player already selected
@@ -160,16 +133,18 @@ export default function Draft() {
       return
     }
 
-    const userId = localStorage.getItem('userId') || 'user-' + Date.now()
-    localStorage.setItem('userId', userId)
-    
+    // Save draft with user email
     saveDraft(userId, {
       players: draftSelections,
-      winners: winnerPredictions
+      winners: winnerPredictions,
+      email: userEmail
     })
     
-    console.log("Draft saved:", { draftSelections, winnerPredictions })
+    console.log("Draft saved for user:", userEmail)
     alert("Draft saved successfully!")
+    
+    // Redirect to dashboard
+    setTimeout(() => navigate('/dashboard'), 500)
   }
 
   const totalPredictions = Object.keys(winnerPredictions).length
@@ -181,12 +156,18 @@ export default function Draft() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link to="/dashboard" className="text-white hover:text-gray-200">← Back to Dashboard</Link>
           <h1 className="text-2xl font-bold">T20 World Cup 2026 Draft</h1>
-          <div></div>
+          <div className="text-sm">Logged in as: <span className="font-bold">{userEmail}</span></div>
         </div>
       </nav>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
+        {existingDraft && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+            ✓ You have a saved draft. Continue editing or start fresh.
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Draft Section */}
@@ -308,6 +289,12 @@ export default function Draft() {
             <div className="bg-white p-6 rounded-lg shadow-md sticky top-6">
               <h3 className="text-xl font-bold mb-4">Draft Summary</h3>
               
+              {/* User Info */}
+              <div className="mb-4 p-3 bg-blue-100 rounded">
+                <p className="text-xs text-gray-600">Logged in as:</p>
+                <p className="text-sm font-bold text-blue-600">{userEmail}</p>
+              </div>
+
               {/* Players Counter */}
               <div className="mb-4 p-3 bg-blue-100 rounded text-center">
                 <p className="text-xs text-gray-600">Players Selected</p>
@@ -324,7 +311,7 @@ export default function Draft() {
               <div className="mb-6 p-3 bg-purple-100 rounded text-center">
                 <p className="text-xs text-gray-600">Max Possible Points</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {selectedPlayers.length === 20 && totalPredictions === 10 ? 3000 : (selectedPlayers.length * 10) + (totalPredictions * 20)}
+                  {selectedPlayers.length === 20 && totalPredictions === 10 ? 3500 : (selectedPlayers.length * 10) + (totalPredictions * 20)}
                 </p>
               </div>
 
@@ -351,7 +338,7 @@ export default function Draft() {
                   onClick={handleSaveDraft}
                   className="w-full mt-4 bg-green-600 text-white py-3 rounded hover:bg-green-700 font-bold text-lg"
                 >
-                  ✓ Save Draft (3000 pts)
+                  ✓ Save Draft (3500 pts)
                 </button>
               ) : (
                 <div className="w-full mt-4 bg-gray-300 text-gray-600 py-3 rounded text-center font-bold">

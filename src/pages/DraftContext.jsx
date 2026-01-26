@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react'
+import { createContext, useState, useEffect } from 'react'
 
 export const DraftContext = createContext()
 
@@ -6,32 +6,67 @@ export function DraftProvider({ children }) {
   const [draftTeams, setDraftTeams] = useState([])
   const [matchResults, setMatchResults] = useState({})
 
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedDrafts = localStorage.getItem('draftTeams')
+    const savedResults = localStorage.getItem('matchResults')
+    
+    if (savedDrafts) {
+      setDraftTeams(JSON.parse(savedDrafts))
+    }
+    if (savedResults) {
+      setMatchResults(JSON.parse(savedResults))
+    }
+  }, [])
+
+  // Save drafts to localStorage whenever they change
   const saveDraft = (userId, draftSelections) => {
-    setDraftTeams(prev => [...prev, {
+    const newDraft = {
       userId,
       draftSelections,
-      createdAt: new Date().toISOString()
-    }])
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    setDraftTeams(prev => {
+      const updated = prev.filter(draft => draft.userId !== userId)
+      const allDrafts = [...updated, newDraft]
+      localStorage.setItem('draftTeams', JSON.stringify(allDrafts))
+      return allDrafts
+    })
   }
 
+  // Update match results and save to localStorage
   const updateMatchResult = (matchId, batsman, bowler, winner) => {
-    setMatchResults(prev => ({
-      ...prev,
-      [matchId]: { batsman, bowler, winner }
-    }))
+    setMatchResults(prev => {
+      const updated = {
+        ...prev,
+        [matchId]: { batsman, bowler, winner }
+      }
+      localStorage.setItem('matchResults', JSON.stringify(updated))
+      return updated
+    })
   }
 
+  // Calculate scores for all users
   const calculateScores = () => {
     const scores = {}
 
     draftTeams.forEach(team => {
       const userId = team.userId
-      scores[userId] = { totalScore: 0, userId, details: [] }
+      scores[userId] = { 
+        totalScore: 0, 
+        userId, 
+        email: team.draftSelections.email || userId,
+        details: [],
+        createdAt: team.createdAt
+      }
 
-      // For each match in their draft
-      Object.keys(team.draftSelections.players || {}).forEach(key => {
+      // Check player predictions
+      const players = team.draftSelections.players || {}
+      Object.keys(players).forEach(key => {
         const [matchId, role] = key.split('-')
-        const player = team.draftSelections.players[key]
+        const player = players[key]
         const result = matchResults[matchId]
 
         if (result) {
@@ -56,8 +91,9 @@ export function DraftProvider({ children }) {
       })
 
       // Check match winner predictions
-      Object.keys(team.draftSelections.winners || {}).forEach(matchId => {
-        const predictedWinner = team.draftSelections.winners[matchId]
+      const winners = team.draftSelections.winners || {}
+      Object.keys(winners).forEach(matchId => {
+        const predictedWinner = winners[matchId]
         const result = matchResults[matchId]
 
         if (result && result.winner === predictedWinner) {
@@ -75,13 +111,19 @@ export function DraftProvider({ children }) {
     return scores
   }
 
+  // Get current user's draft
+  const getUserDraft = (userId) => {
+    return draftTeams.find(team => team.userId === userId)
+  }
+
   return (
     <DraftContext.Provider value={{
       draftTeams,
       matchResults,
       saveDraft,
       updateMatchResult,
-      calculateScores
+      calculateScores,
+      getUserDraft
     }}>
       {children}
     </DraftContext.Provider>
