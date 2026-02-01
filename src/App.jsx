@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DraftProvider } from './context/DraftContext';
 import Invite from './pages/Invite';
 import Login from './pages/Login';
@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Draft from './pages/Draft';
 import Team from './pages/Team';
 import Admin from './pages/Admin';
+import AdminPanel from './pages/AdminPanel';
+import ViewDraft from './pages/ViewDraft';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
           <Route path="/draft" element={<Draft />} />
           <Route path="/team" element={<Team />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin-panel" element={<AdminPanel />} />
+          <Route path="/view-draft" element={<ViewDraft />} />
         </Routes>
       </Router>
     </DraftProvider>

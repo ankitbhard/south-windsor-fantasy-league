@@ -10,7 +10,7 @@ export default function Dashboard() {
   const userId = localStorage.getItem('userId')
 
   const handleLogout = () => {
-    localStorage.removeItem('user')
+    localStorage.removeItem('token')
     localStorage.removeItem('userId')
     localStorage.removeItem('userEmail')
     navigate("/")
@@ -45,10 +45,20 @@ export default function Dashboard() {
         <h2 className="text-3xl font-bold mb-6">Dashboard</h2>
         
         {/* Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Link to="/draft" className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Link to="/draft" className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition">
             <h3 className="text-xl font-bold mb-2">📝 Create Draft</h3>
             <p className="text-gray-600">Pick players and predict match winners</p>
+          </Link>
+          
+          <Link to="/view-draft" className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition">
+            <h3 className="text-xl font-bold mb-2">📋 My Draft</h3>
+            <p className="text-gray-600">View and edit your draft</p>
+          </Link>
+
+          <Link to="/admin-panel" className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition">
+            <h3 className="text-xl font-bold mb-2">⚙️ Admin Panel</h3>
+            <p className="text-gray-600">Add matches, manage admins</p>
           </Link>
           
           <div className="bg-white p-6 rounded-lg shadow-md">
@@ -56,19 +66,13 @@ export default function Dashboard() {
             <p className="text-3xl font-bold text-blue-600">{currentUserScore.totalScore}</p>
             <p className="text-gray-600 text-sm">points</p>
           </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-bold mb-2">👥 Total Players</h3>
-            <p className="text-3xl font-bold text-green-600">{draftTeams.length}</p>
-            <p className="text-gray-600 text-sm">have drafted</p>
-          </div>
         </div>
 
         {/* Current User Draft Status */}
         {draftTeams.find(d => d.userId === userId) ? (
           <div className="bg-green-100 border border-green-400 p-4 rounded-lg mb-8">
             <p className="text-green-700">
-              ✓ <strong>You have a draft saved!</strong> You can edit it anytime on the Draft page.
+              ✓ <strong>You have a draft saved!</strong> You can edit it during the edit window (6PM-12AM).
             </p>
           </div>
         ) : (
@@ -144,7 +148,21 @@ export default function Dashboard() {
               <p className="text-2xl font-bold text-purple-600">+200 pts</p>
             </div>
           </div>
-          <p className="text-gray-600 text-sm mt-4">Maximum possible: <strong>3500 points</strong> (10 matches × 350 pts each)</p>
+          <p className="text-gray-600 text-sm mt-4">Maximum possible: <strong>3,500 points</strong> (10 matches × 350 pts each)</p>
+        </div>
+
+        {/* Edit Window Information */}
+        <div className="bg-purple-50 p-6 rounded-lg shadow-md mt-8">
+          <h3 className="text-xl font-bold mb-4">⏰ Edit Window</h3>
+          <div className="bg-white p-4 rounded">
+            <p className="text-gray-700 mb-2">
+              <strong>When can you edit your draft?</strong>
+            </p>
+            <p className="text-lg font-bold text-purple-600">6:00 PM - 12:00 AM (Midnight)</p>
+            <p className="text-gray-600 text-sm mt-2">
+              You can create a draft anytime, but editing is only allowed during the edit window. Outside this time, your draft is locked.
+            </p>
+          </div>
         </div>
       </div>
     </div>
