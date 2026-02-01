@@ -1,23 +1,23 @@
-import { useState, useContext } from "react"
-import { Link } from "react-router-dom"
-import { DraftContext } from "../context/DraftContext"
+import { useState, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 
 export default function Admin() {
-  const { updateMatchResult } = useContext(DraftContext)
-  const [matches] = useState([
-    { id: 1, team1: "India", team2: "Pakistan" },
-    { id: 2, team1: "Australia", team2: "South Africa" },
-    { id: 3, team1: "England", team2: "West Indies" },
-    { id: 4, team1: "Sri Lanka", team2: "Afghanistan" },
-    { id: 5, team1: "USA", team2: "Scotland" },
-    { id: 6, team1: "India", team2: "Australia" },
-    { id: 7, team1: "Pakistan", team2: "South Africa" },
-    { id: 8, team1: "England", team2: "Afghanistan" },
-    { id: 9, team1: "West Indies", team2: "Sri Lanka" },
-    { id: 10, team1: "USA", team2: "Scotland" },
-  ])
+  const navigate = useNavigate()
+  const token = localStorage.getItem('token')
+  const userEmail = localStorage.getItem('userEmail')
 
-  const [players] = useState([
+  const [matches, setMatches] = useState([])
+  const [players, setPlayers] = useState([])
+  const [matchResults, setMatchResults] = useState({})
+  const [results, setResults] = useState({})
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Hardcoded players list
+  const allPlayers = [
     { id: 1, name: "Virat Kohli", team: "India", role: "batsman" },
     { id: 2, name: "Rohit Sharma", team: "India", role: "batsman" },
     { id: 3, name: "Suryakumar Yadav", team: "India", role: "batsman" },
@@ -62,134 +62,293 @@ export default function Admin() {
     { id: 42, name: "Richie Berrington", team: "Scotland", role: "batsman" },
     { id: 43, name: "Mark Watt", team: "Scotland", role: "bowler" },
     { id: 44, name: "Chris Sole", team: "Scotland", role: "bowler" },
-  ])
+  ]
 
-  const [results, setResults] = useState({})
+  // Load matches and results on mount
+  useEffect(() => {
+    loadMatches()
+    loadMatchResults()
+  }, [])
 
-  const handleResultSubmit = (matchId) => {
-    const batsmanId = results[matchId]?.batsman
-    const bowlerId = results[matchId]?.bowler
-    const winner = results[matchId]?.winner
+  const loadMatches = async () => {
+    try {
+      const response = await fetch(`${API_URL}/matches`)
+      const data = await response.json()
+      setMatches(data)
+    } catch (error) {
+      console.error('Error loading matches:', error)
+    }
+  }
 
-    if (!batsmanId || !bowlerId || !winner) {
-      alert("Please select Batsman, Bowler, and Winner")
+  const loadMatchResults = async () => {
+    try {
+      const response = await fetch(`${API_URL}/matches/results/all`)
+      const data = await response.json()
+      const resultsMap = {}
+      data.forEach(result => {
+        resultsMap[result.matchId] = result
+      })
+      setMatchResults(resultsMap)
+    } catch (error) {
+      console.error('Error loading results:', error)
+    }
+  }
+
+  const handleResultSubmit = async (matchId) => {
+    const matchResult = results[matchId]
+    
+    if (!matchResult || !matchResult.batsman || !matchResult.bowler || !matchResult.winner) {
+      setError(`Match ${matchId}: Please select batsman, bowler, and winner`)
       return
     }
 
-    updateMatchResult(matchId, parseInt(batsmanId), parseInt(bowlerId), winner)
-    alert(`Match ${matchId} result saved!`)
+    setError('')
+    setMessage('')
+    setLoading(true)
+
+    try {
+      const response = await fetch(`${API_URL}/matches/result/${matchId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          batsman: parseInt(matchResult.batsman),
+          bowler: parseInt(matchResult.bowler),
+          winner: matchResult.winner
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to save match result')
+        return
+      }
+
+      setMessage(`✓ Match ${matchId} result saved!`)
+      
+      // Update local state
+      setMatchResults(prev => ({
+        ...prev,
+        [matchId]: {
+          matchId,
+          batsman: parseInt(matchResult.batsman),
+          bowler: parseInt(matchResult.bowler),
+          winner: matchResult.winner
+        }
+      }))
+
+      // Clear form for this match
+      setResults(prev => {
+        const updated = { ...prev }
+        delete updated[matchId]
+        return updated
+      })
+    } catch (error) {
+      setError('Error saving match result: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getBatsmen = () => allPlayers.filter(p => p.role === 'batsman')
+  const getBowlers = () => allPlayers.filter(p => p.role === 'bowler')
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userId')
+    localStorage.removeItem('userEmail')
+    navigate("/")
   }
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Navigation */}
       <nav className="bg-red-600 text-white p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link to="/dashboard" className="text-white hover:text-gray-200">← Back to Dashboard</Link>
           <h1 className="text-2xl font-bold">Admin - Update Match Results</h1>
-          <div></div>
+          <div className="flex gap-2 items-center">
+            <span className="text-sm">{userEmail}</span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-700 hover:bg-red-800 px-3 py-1 rounded text-sm"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto p-6">
-        <h2 className="text-3xl font-bold mb-6">Set Match Winners & Performance</h2>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-6">
+        {message && (
+          <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {message}
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {matches.map(match => (
-            <div key={match.id} className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-bold mb-4">{`Match ${match.id}: ${match.team1} vs ${match.team2}`}</h3>
-              
-              <div className="space-y-4">
-                {/* Best Batsman */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Man of the Match (Batsman) - +100 pts</label>
-                  <select
-                    onChange={(e) => {
-                      setResults(prev => ({
-                        ...prev,
-                        [match.id]: { ...prev[match.id], batsman: e.target.value }
-                      }))
-                    }}
-                    className="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring focus:ring-blue-300"
-                  >
-                    <option value="">Select Batsman...</option>
-                    {players.filter(p => p.role === 'batsman').map(player => (
-                      <option key={player.id} value={player.id}>
-                        {player.name} ({player.team})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
-                {/* Best Bowler */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Best Bowler - +50 pts</label>
-                  <select
-                    onChange={(e) => {
-                      setResults(prev => ({
-                        ...prev,
-                        [match.id]: { ...prev[match.id], bowler: e.target.value }
-                      }))
-                    }}
-                    className="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring focus:ring-blue-300"
-                  >
-                    <option value="">Select Bowler...</option>
-                    {players.filter(p => p.role === 'bowler').map(player => (
-                      <option key={player.id} value={player.id}>
-                        {player.name} ({player.team})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <h2 className="text-3xl font-bold mb-6">Set Match Results</h2>
 
-                {/* Match Winner */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">🏆 Match Winner - +200 pts</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        setResults(prev => ({
-                          ...prev,
-                          [match.id]: { ...prev[match.id], winner: match.team1 }
-                        }))
-                      }}
-                      className={`py-2 px-3 rounded font-medium transition ${
-                        results[match.id]?.winner === match.team1
-                          ? "bg-green-600 text-white"
-                          : "bg-white border border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {match.team1}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setResults(prev => ({
-                          ...prev,
-                          [match.id]: { ...prev[match.id], winner: match.team2 }
-                        }))
-                      }}
-                      className={`py-2 px-3 rounded font-medium transition ${
-                        results[match.id]?.winner === match.team2
-                          ? "bg-green-600 text-white"
-                          : "bg-white border border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {match.team2}
-                    </button>
+        {matches.length === 0 ? (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <p className="text-gray-600">No matches added yet. Go to Admin Panel to add matches.</p>
+            <Link to="/admin-panel" className="text-blue-600 hover:text-blue-800 font-bold mt-4 inline-block">
+              Go to Admin Panel →
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {matches.map(match => {
+              const existingResult = matchResults[match.matchId]
+              const currentResult = results[match.matchId] || existingResult || {}
+
+              return (
+                <div key={match.matchId} className="bg-white p-6 rounded-lg shadow-md">
+                  <h3 className="text-lg font-bold mb-4">
+                    Match {match.matchId}: {match.team1} vs {match.team2}
+                  </h3>
+
+                  {existingResult && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                      <p className="text-sm text-green-700">✓ Result Already Set</p>
+                      <p className="text-xs text-green-600 mt-1">
+                        Batsman: {allPlayers.find(p => p.id === existingResult.batsman)?.name}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Bowler: {allPlayers.find(p => p.id === existingResult.bowler)?.name}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Winner: {existingResult.winner}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {/* Best Batsman */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Man of the Match (Batsman) - +100 pts</label>
+                      <select
+                        value={currentResult.batsman || ''}
+                        onChange={(e) => {
+                          setResults(prev => ({
+                            ...prev,
+                            [match.matchId]: { ...prev[match.matchId], batsman: e.target.value }
+                          }))
+                        }}
+                        className="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring focus:ring-blue-300"
+                      >
+                        <option value="">Select Batsman...</option>
+                        {getBatsmen().map(player => (
+                          <option key={player.id} value={player.id}>
+                            {player.name} ({player.team})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Best Bowler */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Best Bowler - +50 pts</label>
+                      <select
+                        value={currentResult.bowler || ''}
+                        onChange={(e) => {
+                          setResults(prev => ({
+                            ...prev,
+                            [match.matchId]: { ...prev[match.matchId], bowler: e.target.value }
+                          }))
+                        }}
+                        className="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring focus:ring-blue-300"
+                      >
+                        <option value="">Select Bowler...</option>
+                        {getBowlers().map(player => (
+                          <option key={player.id} value={player.id}>
+                            {player.name} ({player.team})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Match Winner */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">🏆 Match Winner - +200 pts</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setResults(prev => ({
+                              ...prev,
+                              [match.matchId]: { ...prev[match.matchId], winner: match.team1 }
+                            }))
+                          }}
+                          className={`py-2 px-3 rounded font-medium transition ${
+                            currentResult.winner === match.team1
+                              ? "bg-green-600 text-white"
+                              : "bg-white border border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          {match.team1}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setResults(prev => ({
+                              ...prev,
+                              [match.matchId]: { ...prev[match.matchId], winner: match.team2 }
+                            }))
+                          }}
+                          className={`py-2 px-3 rounded font-medium transition ${
+                            currentResult.winner === match.team2
+                              ? "bg-green-600 text-white"
+                              : "bg-white border border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          {match.team2}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    {!existingResult && (
+                      <button
+                        onClick={() => handleResultSubmit(match.matchId)}
+                        disabled={loading || !currentResult.batsman || !currentResult.bowler || !currentResult.winner}
+                        className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Saving...' : '✓ Save Result (350 pts total)'}
+                      </button>
+                    )}
                   </div>
                 </div>
+              )
+            })}
+          </div>
+        )}
 
-                {/* Submit Button */}
-                {results[match.id]?.batsman && results[match.id]?.bowler && results[match.id]?.winner && (
-                  <button
-                    onClick={() => handleResultSubmit(match.id)}
-                    className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 font-bold"
-                  >
-                    ✓ Save Result (350 pts total)
-                  </button>
-                )}
-              </div>
+        {/* Info */}
+        <div className="bg-blue-50 p-6 rounded-lg shadow-md mt-8">
+          <h3 className="text-xl font-bold mb-4">ℹ️ Points Breakdown</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded">
+              <p className="text-sm text-gray-600">Correct Batsman</p>
+              <p className="text-2xl font-bold text-green-600">+100 pts</p>
             </div>
-          ))}
+            <div className="bg-white p-4 rounded">
+              <p className="text-sm text-gray-600">Correct Bowler</p>
+              <p className="text-2xl font-bold text-blue-600">+50 pts</p>
+            </div>
+            <div className="bg-white p-4 rounded">
+              <p className="text-sm text-gray-600">Correct Winner</p>
+              <p className="text-2xl font-bold text-purple-600">+200 pts</p>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm mt-4">Total per match: <strong>350 points</strong></p>
         </div>
       </div>
     </div>
