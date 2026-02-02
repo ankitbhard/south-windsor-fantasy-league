@@ -1,6 +1,8 @@
 import { useNavigate, Link } from "react-router-dom"
-import { useContext } from "react"
+import { useContext, useEffect, useState } from "react"
 import { DraftContext } from "../context/DraftContext"
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -8,6 +10,37 @@ export default function Dashboard() {
 
   const userEmail = localStorage.getItem('userEmail') || 'Guest'
   const userId = localStorage.getItem('userId')
+  const token = localStorage.getItem('token')
+
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  // Check if user is admin
+  useEffect(() => {
+    checkAdminStatus()
+  }, [])
+
+  const checkAdminStatus = async () => {
+    try {
+      const response = await fetch(`${API_URL}/admin/list`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      // If response is OK, user is admin
+      if (response.ok) {
+        setIsAdmin(true)
+      } else {
+        setIsAdmin(false)
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error)
+      setIsAdmin(false)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -30,7 +63,11 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold">Fantasy Cricket</h1>
           <div className="flex gap-4 items-center">
             <span className="text-sm">Welcome, <strong>{userEmail}</strong></span>
-            <Link to="/admin" className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Admin</Link>
+            {isAdmin && (
+              <Link to="/admin" className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm font-bold">
+                ⚙️ Admin
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm"
@@ -45,7 +82,7 @@ export default function Dashboard() {
         <h2 className="text-3xl font-bold mb-6">Dashboard</h2>
         
         {/* Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className={`grid ${isAdmin ? 'grid-cols-1 md:grid-cols-5' : 'grid-cols-1 md:grid-cols-4'} gap-4 mb-8`}>
           <Link to="/draft" className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition">
             <h3 className="text-xl font-bold mb-2">📝 Create Draft</h3>
             <p className="text-gray-600">Pick players and predict match winners</p>
@@ -56,17 +93,36 @@ export default function Dashboard() {
             <p className="text-gray-600">View and edit your draft</p>
           </Link>
 
-          <Link to="/admin-panel" className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition">
-            <h3 className="text-xl font-bold mb-2">⚙️ Admin Panel</h3>
-            <p className="text-gray-600">Add matches, manage admins</p>
-          </Link>
+          {isAdmin && (
+            <Link to="/admin-panel" className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition border-2 border-orange-400">
+              <h3 className="text-xl font-bold mb-2">⚙️ Admin Panel</h3>
+              <p className="text-gray-600">Add matches, manage admins</p>
+            </Link>
+          )}
           
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-xl font-bold mb-2">📊 Your Score</h3>
             <p className="text-3xl font-bold text-blue-600">{currentUserScore.totalScore}</p>
             <p className="text-gray-600 text-sm">points</p>
           </div>
+
+          {isAdmin && (
+            <div className="bg-red-50 p-6 rounded-lg shadow-md border-2 border-red-200">
+              <h3 className="text-xl font-bold mb-2">👤 Admin Status</h3>
+              <p className="text-red-600 font-bold">✓ Admin</p>
+              <p className="text-gray-600 text-sm">Full access</p>
+            </div>
+          )}
         </div>
+
+        {/* Admin Notice */}
+        {isAdmin && (
+          <div className="bg-orange-100 border-l-4 border-orange-600 p-4 rounded-lg mb-8">
+            <p className="text-orange-700 font-bold">
+              👋 Welcome, Admin! You have access to the Admin Panel to add matches and update results.
+            </p>
+          </div>
+        )}
 
         {/* Current User Draft Status */}
         {draftTeams.find(d => d.userId === userId) ? (
