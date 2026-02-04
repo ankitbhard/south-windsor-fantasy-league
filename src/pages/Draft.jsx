@@ -20,7 +20,7 @@ export default function Draft() {
   const [error, setError] = useState('')
   const [canEdit, setCanEdit] = useState(true)
 
-  // All players grouped by team
+  // T20 World Cup 2025-26 Teams and Players
   const allPlayers = {
     India: [
       { id: 1, name: "Virat Kohli", role: "batsman" },
@@ -45,7 +45,7 @@ export default function Draft() {
       { id: 16, name: "Steve Smith", role: "batsman" },
       { id: 17, name: "David Warner", role: "batsman" },
       { id: 18, name: "Aaron Finch", role: "batsman" },
-      { id: 19, name: "Glen Maxwell", role: "batsman" },
+      { id: 19, name: "Glenn Maxwell", role: "batsman" },
       { id: 20, name: "Pat Cummins", role: "bowler" },
       { id: 21, name: "Josh Hazlewood", role: "bowler" },
       { id: 22, name: "Mitchell Starc", role: "bowler" }
@@ -95,23 +95,113 @@ export default function Draft() {
       { id: 56, name: "Naveen-ul-Haq", role: "bowler" },
       { id: 57, name: "Mujeeb Ur Rahman", role: "bowler" }
     ],
-    USA: [
-      { id: 58, name: "Aaron Jones", role: "batsman" },
-      { id: 59, name: "Ishan Malhotra", role: "batsman" },
-      { id: 60, name: "Steven Taylor", role: "batsman" },
-      { id: 61, name: "Corey Anderson", role: "batsman" },
-      { id: 62, name: "Ali Khan", role: "bowler" },
-      { id: 63, name: "Harmeet Singh", role: "bowler" },
-      { id: 64, name: "Saurabh Netravalkar", role: "bowler" }
+    "New Zealand": [
+      { id: 58, name: "Kane Williamson", role: "batsman" },
+      { id: 59, name: "Devon Conway", role: "batsman" },
+      { id: 60, name: "Mark Chapman", role: "batsman" },
+      { id: 61, name: "Daryl Mitchell", role: "batsman" },
+      { id: 62, name: "Tim Southee", role: "bowler" },
+      { id: 63, name: "Trent Boult", role: "bowler" },
+      { id: 64, name: "Ish Sodhi", role: "bowler" }
+    ],
+    "United States": [
+      { id: 65, name: "Aaron Jones", role: "batsman" },
+      { id: 66, name: "Ishan Malhotra", role: "batsman" },
+      { id: 67, name: "Steven Taylor", role: "batsman" },
+      { id: 68, name: "Corey Anderson", role: "batsman" },
+      { id: 69, name: "Ali Khan", role: "bowler" },
+      { id: 70, name: "Harmeet Singh", role: "bowler" },
+      { id: 71, name: "Saurabh Netravalkar", role: "bowler" }
     ],
     Scotland: [
-      { id: 65, name: "Kyle Coetzer", role: "batsman" },
-      { id: 66, name: "Richie Berrington", role: "batsman" },
-      { id: 67, name: "Calum MacLeod", role: "batsman" },
-      { id: 68, name: "George Munsey", role: "batsman" },
-      { id: 69, name: "Mark Watt", role: "bowler" },
-      { id: 70, name: "Chris Sole", role: "bowler" },
-      { id: 71, name: "Safyaan Sharif", role: "bowler" }
+      { id: 72, name: "Kyle Coetzer", role: "batsman" },
+      { id: 73, name: "Richie Berrington", role: "batsman" },
+      { id: 74, name: "Calum MacLeod", role: "batsman" },
+      { id: 75, name: "George Munsey", role: "batsman" },
+      { id: 76, name: "Mark Watt", role: "bowler" },
+      { id: 77, name: "Chris Sole", role: "bowler" },
+      { id: 78, name: "Safyaan Sharif", role: "bowler" }
+    ],
+    Ireland: [
+      { id: 79, name: "Andrew Balbirnie", role: "batsman" },
+      { id: 80, name: "Paul Stirling", role: "batsman" },
+      { id: 81, name: "Lorcan Tucker", role: "batsman" },
+      { id: 82, name: "Harry Tector", role: "batsman" },
+      { id: 83, name: "Josh Little", role: "bowler" },
+      { id: 84, name: "Mark Adair", role: "bowler" },
+      { id: 85, name: "Barry McCarthy", role: "bowler" }
+    ],
+    Namibia: [
+      { id: 86, name: "Stephen Baard", role: "batsman" },
+      { id: 87, name: "Craig Williams", role: "batsman" },
+      { id: 88, name: "Zane Green", role: "batsman" },
+      { id: 89, name: "Jan Frylinck", role: "batsman" },
+      { id: 90, name: "Bernard Scholtz", role: "bowler" },
+      { id: 91, name: "Ruben van Heerden", role: "bowler" },
+      { id: 92, name: "Tangeni Lungameni", role: "bowler" }
+    ],
+    Netherlands: [
+      { id: 93, name: "Max O'Dowd", role: "batsman" },
+      { id: 94, name: "Vikram Singh", role: "batsman" },
+      { id: 95, name: "Bas de Leede", role: "batsman" },
+      { id: 96, name: "Tom Cooper", role: "batsman" },
+      { id: 97, name: "Paul van Meekeren", role: "bowler" },
+      { id: 98, name: "Roelof van der Merwe", role: "bowler" },
+      { id: 99, name: "Fred Klaassen", role: "bowler" }
+    ],
+    Zimbabwe: [
+      { id: 100, name: "Craig Ervine", role: "batsman" },
+      { id: 101, name: "Regis Chakabva", role: "batsman" },
+      { id: 102, name: "Sean Williams", role: "batsman" },
+      { id: 103, name: "Sikandar Raza", role: "batsman" },
+      { id: 104, name: "Blessing Muzarabani", role: "bowler" },
+      { id: 105, name: "Luke Jongwe", role: "bowler" },
+      { id: 106, name: "Donald Tiripano", role: "bowler" }
+    ],
+    Oman: [
+      { id: 107, name: "Jatinder Singh", role: "batsman" },
+      { id: 108, name: "Aqib Ilyas", role: "batsman" },
+      { id: 109, name: "Kashyap Prajapati", role: "batsman" },
+      { id: 110, name: "Sameet Patel", role: "batsman" },
+      { id: 111, name: "Bilal Khan", role: "bowler" },
+      { id: 112, name: "Kaleemullah Khan", role: "bowler" },
+      { id: 113, name: "Fayyaz Butt", role: "bowler" }
+    ],
+    Canada: [
+      { id: 114, name: "Aaron Johnson", role: "batsman" },
+      { id: 115, name: "Saad Bin Zafar", role: "batsman" },
+      { id: 116, name: "Rizwan Cheema", role: "batsman" },
+      { id: 117, name: "Nikhil Dutta", role: "batsman" },
+      { id: 118, name: "Khalid Ahmadullah", role: "bowler" },
+      { id: 119, name: "Jeremy Gordon", role: "bowler" },
+      { id: 120, name: "Junaid Siddiqui", role: "bowler" }
+    ],
+    Nepal: [
+      { id: 121, name: "Rohit Paudel", role: "batsman" },
+      { id: 122, name: "Gyanendra Malla", role: "batsman" },
+      { id: 123, name: "Anil Sah", role: "batsman" },
+      { id: 124, name: "Dipendra Singh Airee", role: "batsman" },
+      { id: 125, name: "Sompal Kami", role: "bowler" },
+      { id: 126, name: "Sandeep Lamichhane", role: "bowler" },
+      { id: 127, name: "Abinash Bohara", role: "bowler" }
+    ],
+    Italy: [
+      { id: 128, name: "Alessandro Campagna", role: "batsman" },
+      { id: 129, name: "Gianluca Navarrete", role: "batsman" },
+      { id: 130, name: "Paul Stirling", role: "batsman" },
+      { id: 131, name: "Varun Chopra", role: "batsman" },
+      { id: 132, name: "Jaspreet Singh", role: "bowler" },
+      { id: 133, name: "Aftab Alam", role: "bowler" },
+      { id: 134, name: "George Garrett", role: "bowler" }
+    ],
+    "United Arab Emirates": [
+      { id: 135, name: "Muhammad Waseem", role: "batsman" },
+      { id: 136, name: "Aryan Lakra", role: "batsman" },
+      { id: 137, name: "Babar Hayat", role: "batsman" },
+      { id: 138, name: "Vriitya Aravind", role: "batsman" },
+      { id: 139, name: "Zahoor Khan", role: "bowler" },
+      { id: 140, name: "Karthik Meiyappan", role: "bowler" },
+      { id: 141, name: "Ahmed Raza", role: "bowler" }
     ]
   }
 
