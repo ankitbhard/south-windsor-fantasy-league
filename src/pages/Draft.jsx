@@ -1,8 +1,7 @@
 import { useContext, useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { DraftContext } from "../context/DraftContext"
-import { EDIT_WINDOW_CONFIG } from "../config/editWindow"
-
+import { DRAFT_CONFIG, isEditWindowOpen, getEditWindowText } from "../config/draftConfig"
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 
 export default function Draft() {
@@ -213,14 +212,14 @@ export default function Draft() {
   }, [])
 
   const checkEditWindow = () => {
-    if (!EDIT_WINDOW_CONFIG.ENABLED) {
+    if (!DRAFT_CONFIG.ALLOW_24_HOUR_EDITING) {
       setCanEdit(true)
       return
     }
 
     const now = new Date()
     const hour = now.getHours()
-    const isOpen = hour >= EDIT_WINDOW_CONFIG.START_HOUR || hour < EDIT_WINDOW_CONFIG.END_HOUR
+    const isOpen = hour >= DRAFT_CONFIG.EDIT_WINDOW_START_HOUR || hour < DRAFT_CONFIG.EDIT_WINDOW_END_HOUR
     setCanEdit(isOpen)
   }
 
@@ -271,7 +270,7 @@ export default function Draft() {
   }
 
   const handleSaveDraft = async () => {
-    if (!canEdit && EDIT_WINDOW_CONFIG.ENABLED) {
+    if (!canEdit && DRAFT_CONFIG.ALLOW_24_HOUR_EDITING) {
       setError('Edit window closed')
       return
     }
@@ -331,9 +330,9 @@ export default function Draft() {
           </div>
         )}
 
-        {!canEdit && EDIT_WINDOW_CONFIG.ENABLED && (
+        {!canEdit && DRAFT_CONFIG.ALLOW_24_HOUR_EDITING && (
           <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-            ⚠️ Edit window closed! You can add selections between {EDIT_WINDOW_CONFIG.WINDOW_MESSAGE}
+            ⚠️ Edit window closed! You can add selections between {DRAFT_CONFIG.WINDOW_MESSAGE}
           </div>
         )}
 
