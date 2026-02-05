@@ -72,81 +72,66 @@ export default function Admin() {
     }
   }
 
-  const handleResultSubmit = async (matchId) => {
-    matchId = parseInt(matchId)
-    console.log('Submitting result for match:', matchId)
-    
-    const matchResult = results[matchId]
-    
-    if (!matchResult || !matchResult.batsman || !matchResult.bowler || !matchResult.winner) {
-      setError(`Match ${matchId}: Please select batsman, bowler, and winner`)
+const handleResultSubmit = async (matchId) => {
+  console.log('Match ID type:', typeof matchId, 'value:', matchId)
+  
+  // Ensure it's a number
+  const numMatchId = Number(matchId)
+  console.log('Converted Match ID:', numMatchId)
+  
+  const matchResult = results[numMatchId]
+  
+  if (!matchResult || !matchResult.batsman || !matchResult.bowler || !matchResult.winner) {
+    setError(`Match ${numMatchId}: Please select batsman, bowler, and winner`)
+    return
+  }
+
+  setError('')
+  setMessage('')
+  setLoading(true)
+
+  try {
+    const payload = {
+      batsman: parseInt(matchResult.batsman),
+      bowler: parseInt(matchResult.bowler),
+      winner: matchResult.winner
+    }
+
+    console.log('Final URL:', `${API_URL}/matches/result/${numMatchId}`)
+    console.log('Payload:', payload)
+
+    const response = await fetch(`${API_URL}/matches/result/${numMatchId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    })
+
+    const data = await response.json()
+    console.log('Response:', data)
+
+    if (!response.ok) {
+      setError(data.error || 'Failed to save match result')
+      setLoading(false)
       return
     }
 
-    setError('')
-    setMessage('')
-    setLoading(true)
-
-    try {
-      const payload = {
-        batsman: parseInt(matchResult.batsman),
-        bowler: parseInt(matchResult.bowler),
-        winner: matchResult.winner
-      }
-
-      console.log('Sending payload:', payload)
-      console.log('URL:', `${API_URL}/matches/result/${matchId}`)
-
-      const response = await fetch(`${API_URL}/matches/result/${matchId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await response.json()
-      console.log('Response:', data)
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to save match result')
-        setLoading(false)
-        return
-      }
-
-      setMessage(`✓ Match ${matchId} result saved!`)
-      
-      // Update state
-      setMatchResults(prev => ({
-        ...prev,
-        [matchId]: {
-          matchId: matchId,
-          batsman: parseInt(matchResult.batsman),
-          bowler: parseInt(matchResult.bowler),
-          winner: matchResult.winner
-        }
-      }))
-
-      // Clear this match's form
-      setResults(prev => {
-        const updated = { ...prev }
-        delete updated[matchId]
-        return updated
-      })
-
-      // Reload after 1 second
-      setTimeout(() => {
-        loadMatches()
-        loadMatchResults()
-      }, 1000)
-    } catch (error) {
-      console.error('Error:', error)
-      setError('Error saving match result: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
+    setMessage(`✓ Match ${numMatchId} result saved!`)
+    
+    // Reload
+    setTimeout(() => {
+      loadMatches()
+      loadMatchResults()
+    }, 1000)
+  } catch (error) {
+    console.error('Error:', error)
+    setError('Error saving match result: ' + error.message)
+  } finally {
+    setLoading(false)
   }
+}
 
   const getBatsmen = () => allPlayers.filter(p => p.role === 'batsman')
   const getBowlers = () => allPlayers.filter(p => p.role === 'bowler')
@@ -234,8 +219,8 @@ export default function Admin() {
                           onChange={(e) => {
                             setResults(prev => ({
                               ...prev,
-                              [match.matchId]: { 
-                                ...prev[match.matchId], 
+                              [numMatchId]: { 
+                                ...prev[numMatchId], 
                                 batsman: e.target.value 
                               }
                             }))
@@ -258,9 +243,9 @@ export default function Admin() {
                           onChange={(e) => {
                             setResults(prev => ({
                               ...prev,
-                              [match.matchId]: { 
-                                ...prev[match.matchId], 
-                                bowler: e.target.value 
+                              [numMatchId]: { 
+                                ...prev[numMatchId], 
+                                batsman: e.target.value 
                               }
                             }))
                           }}
@@ -280,13 +265,13 @@ export default function Admin() {
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             onClick={() => {
-                              setResults(prev => ({
-                                ...prev,
-                                [match.matchId]: { 
-                                  ...prev[match.matchId], 
-                                  winner: match.team1 
-                                }
-                              }))
+                            setResults(prev => ({
+                              ...prev,
+                              [numMatchId]: { 
+                                ...prev[numMatchId], 
+                                batsman: e.target.value 
+                              }
+                            }))
                             }}
                             className={`py-2 px-3 rounded font-medium transition ${
                               currentResult.winner === match.team1
@@ -298,13 +283,13 @@ export default function Admin() {
                           </button>
                           <button
                             onClick={() => {
-                              setResults(prev => ({
-                                ...prev,
-                                [match.matchId]: { 
-                                  ...prev[match.matchId], 
-                                  winner: match.team2 
-                                }
-                              }))
+                            setResults(prev => ({
+                              ...prev,
+                              [numMatchId]: { 
+                                ...prev[numMatchId], 
+                                batsman: e.target.value 
+                              }
+                            }))
                             }}
                             className={`py-2 px-3 rounded font-medium transition ${
                               currentResult.winner === match.team2
