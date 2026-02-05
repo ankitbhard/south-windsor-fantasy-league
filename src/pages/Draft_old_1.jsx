@@ -1,7 +1,6 @@
 import { useContext, useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { DraftContext } from "../context/DraftContext"
-import { EDIT_WINDOW_CONFIG } from "../config/editWindow"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 
@@ -213,14 +212,9 @@ export default function Draft() {
   }, [])
 
   const checkEditWindow = () => {
-    if (!EDIT_WINDOW_CONFIG.ENABLED) {
-      setCanEdit(true)
-      return
-    }
-
     const now = new Date()
     const hour = now.getHours()
-    const isOpen = hour >= EDIT_WINDOW_CONFIG.START_HOUR || hour < EDIT_WINDOW_CONFIG.END_HOUR
+    const isOpen = hour >= 18 || hour < 0
     setCanEdit(isOpen)
   }
 
@@ -271,14 +265,22 @@ export default function Draft() {
   }
 
   const handleSaveDraft = async () => {
-    if (!canEdit && EDIT_WINDOW_CONFIG.ENABLED) {
-      setError('Edit window closed')
+    if (!canEdit) {
+      setError('Edit window closed. You can only edit between 6PM-12AM')
       return
     }
 
-    // Allow saving incomplete drafts now!
-    if (Object.keys(selections).length === 0 && Object.keys(winners).length === 0) {
-      setError('Please add at least one selection')
+    // Validation
+    const selectedPlayerCount = Object.keys(selections).length
+    const selectedWinnersCount = Object.keys(winners).length
+
+    if (selectedPlayerCount < matches.length * 2) {
+      setError(`Please select all players. Selected: ${selectedPlayerCount}/${matches.length * 2}`)
+      return
+    }
+
+    if (selectedWinnersCount < matches.length) {
+      setError(`Please predict all winners. Predicted: ${selectedWinnersCount}/${matches.length}`)
       return
     }
 
@@ -307,6 +309,7 @@ export default function Draft() {
 
   const selectedPlayerCount = Object.keys(selections).length
   const selectedWinnersCount = Object.keys(winners).length
+  const totalRequired = matches.length * 2 + matches.length
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -331,20 +334,37 @@ export default function Draft() {
           </div>
         )}
 
-        {!canEdit && EDIT_WINDOW_CONFIG.ENABLED && (
+        {!canEdit && (
           <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-            ⚠️ Edit window closed! You can add selections between {EDIT_WINDOW_CONFIG.WINDOW_MESSAGE}
+            ⚠️ Edit window closed! You can only edit between 6PM-12AM. Current draft is saved but locked.
           </div>
         )}
 
         {/* Progress Bar */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-lg font-bold mb-4">Your Selections</h3>
-          <p className="text-sm text-gray-600">
-            Players: {selectedPlayerCount} | Winners: {selectedWinnersCount}
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            💡 Tip: You can save incomplete drafts and come back later to add more selections!
+          <h3 className="text-lg font-bold mb-4">Progress</h3>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium mb-1">Players Selected: {selectedPlayerCount}/{matches.length * 2}</p>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all"
+                  style={{ width: `${(selectedPlayerCount / (matches.length * 2)) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-1">Winners Predicted: {selectedWinnersCount}/{matches.length}</p>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-green-600 h-2 rounded-full transition-all"
+                  style={{ width: `${(selectedWinnersCount / matches.length) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 mt-4">
+            Total Progress: {selectedPlayerCount + selectedWinnersCount}/{totalRequired}
           </p>
         </div>
 
@@ -378,12 +398,12 @@ export default function Draft() {
                         value={player.id}
                         disabled={isPlayerSelected(player.id) && selections[`${match.matchId}-batsman`]?.id !== player.id}
                       >
-                        {player.name} ({player.team})
+                        {player.name} ({player.team}) {isPlayerSelected(player.id) && selections[`${match.matchId}-batsman`]?.id === player.id ? '✓' : ''}
                       </option>
                     ))}
                   </select>
                   {selections[`${match.matchId}-batsman`] && (
-                    <p className="text-sm text-green-600 mt-2">✓ {selections[`${match.matchId}-batsman`].name}</p>
+                    <p className="text-sm text-green-600 mt-2">✓ {selections[`${match.matchId}-batsman`].name} ({selections[`${match.matchId}-batsman`].team})</p>
                   )}
                 </div>
 
@@ -408,12 +428,12 @@ export default function Draft() {
                         value={player.id}
                         disabled={isPlayerSelected(player.id) && selections[`${match.matchId}-bowler`]?.id !== player.id}
                       >
-                        {player.name} ({player.team})
+                        {player.name} ({player.team}) {isPlayerSelected(player.id) && selections[`${match.matchId}-bowler`]?.id === player.id ? '✓' : ''}
                       </option>
                     ))}
                   </select>
                   {selections[`${match.matchId}-bowler`] && (
-                    <p className="text-sm text-green-600 mt-2">✓ {selections[`${match.matchId}-bowler`].name}</p>
+                    <p className="text-sm text-green-600 mt-2">✓ {selections[`${match.matchId}-bowler`].name} ({selections[`${match.matchId}-bowler`].team})</p>
                   )}
                 </div>
               </div>
@@ -452,14 +472,16 @@ export default function Draft() {
         <div className="mt-8 bg-white p-6 rounded-lg shadow-md sticky bottom-0">
           <button
             onClick={handleSaveDraft}
-            disabled={loading || (Object.keys(selections).length === 0 && Object.keys(winners).length === 0)}
+            disabled={selectedPlayerCount < matches.length * 2 || selectedWinnersCount < matches.length || loading || !canEdit}
             className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {loading ? 'Saving...' : `✓ Save Draft (${selectedPlayerCount + selectedWinnersCount} selections)`}
+            {loading ? 'Saving...' : `✓ Save Draft (${selectedPlayerCount + selectedWinnersCount}/${totalRequired} Complete)`}
           </button>
-          <p className="text-sm text-gray-600 mt-3 text-center">
-            💡 You can save incomplete drafts and add more selections later!
-          </p>
+          {(selectedPlayerCount < matches.length * 2 || selectedWinnersCount < matches.length) && (
+            <p className="text-sm text-red-600 mt-3 text-center">
+              Complete all selections to save your draft
+            </p>
+          )}
         </div>
       </div>
     </div>
