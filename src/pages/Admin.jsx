@@ -14,41 +14,190 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({})
 
-  // All players
-  const allPlayers = [
-    { id: 1, name: "Virat Kohli", team: "India", role: "batsman" },
-    { id: 2, name: "Rohit Sharma", team: "India", role: "batsman" },
-    { id: 3, name: "Suryakumar Yadav", team: "India", role: "batsman" },
-    { id: 4, name: "Hardik Pandya", team: "India", role: "batsman" },
-    { id: 5, name: "Axar Patel", team: "India", role: "batsman" },
-    { id: 6, name: "Jasprit Bumrah", team: "India", role: "bowler" },
-    { id: 7, name: "Yuzvendra Chahal", team: "India", role: "bowler" },
-    { id: 8, name: "Mohammed Siraj", team: "India", role: "bowler" },
-    { id: 9, name: "Babar Azam", team: "Pakistan", role: "batsman" },
-    { id: 10, name: "Fakhar Zaman", team: "Pakistan", role: "batsman" },
-    { id: 11, name: "Shaheen Afridi", team: "Pakistan", role: "bowler" },
-    { id: 12, name: "Hasan Ali", team: "Pakistan", role: "bowler" },
-    { id: 13, name: "Steve Smith", team: "Australia", role: "batsman" },
-    { id: 14, name: "David Warner", team: "Australia", role: "batsman" },
-    { id: 15, name: "Pat Cummins", team: "Australia", role: "bowler" },
-    { id: 16, name: "Josh Hazlewood", team: "Australia", role: "bowler" },
-    { id: 17, name: "Aiden Markram", team: "South Africa", role: "batsman" },
-    { id: 18, name: "Reeza Hendricks", team: "South Africa", role: "batsman" },
-    { id: 19, name: "Anrich Nortje", team: "South Africa", role: "bowler" },
-    { id: 20, name: "Kagiso Rabada", team: "South Africa", role: "bowler" },
-    { id: 21, name: "Jos Buttler", team: "England", role: "batsman" },
-    { id: 22, name: "Liam Livingstone", team: "England", role: "batsman" },
-    { id: 23, name: "Jofra Archer", team: "England", role: "bowler" },
-    { id: 24, name: "Adil Rashid", team: "England", role: "bowler" },
-    { id: 25, name: "Nicholas Pooran", team: "West Indies", role: "batsman" },
-    { id: 26, name: "Roston Chase", team: "West Indies", role: "batsman" },
-    { id: 27, name: "Romesh Shepherd", team: "West Indies", role: "bowler" },
-    { id: 28, name: "Akeal Hosein", team: "West Indies", role: "bowler" },
-    { id: 29, name: "Angelo Mathews", team: "Sri Lanka", role: "batsman" },
-    { id: 30, name: "Pathum Nissanka", team: "Sri Lanka", role: "batsman" },
-    { id: 31, name: "Wanindu Hasaranga", team: "Sri Lanka", role: "bowler" },
-    { id: 32, name: "Lahiru Kumara", team: "Sri Lanka", role: "bowler" },
-  ]
+  // Complete player list - SAME AS DRAFT.JSX
+  const allPlayers = {
+    India: [
+      { id: 1, name: "Virat Kohli", role: "batsman" },
+      { id: 2, name: "Rohit Sharma", role: "batsman" },
+      { id: 3, name: "Suryakumar Yadav", role: "batsman" },
+      { id: 4, name: "Hardik Pandya", role: "batsman" },
+      { id: 5, name: "Axar Patel", role: "batsman" },
+      { id: 6, name: "Jasprit Bumrah", role: "bowler" },
+      { id: 7, name: "Yuzvendra Chahal", role: "bowler" },
+      { id: 8, name: "Mohammed Siraj", role: "bowler" }
+    ],
+    Pakistan: [
+      { id: 9, name: "Babar Azam", role: "batsman" },
+      { id: 10, name: "Fakhar Zaman", role: "batsman" },
+      { id: 11, name: "Shan Masood", role: "batsman" },
+      { id: 12, name: "Mohammad Rizwan", role: "batsman" },
+      { id: 13, name: "Shaheen Afridi", role: "bowler" },
+      { id: 14, name: "Hasan Ali", role: "bowler" },
+      { id: 15, name: "Naseem Shah", role: "bowler" }
+    ],
+    Australia: [
+      { id: 16, name: "Steve Smith", role: "batsman" },
+      { id: 17, name: "David Warner", role: "batsman" },
+      { id: 18, name: "Aaron Finch", role: "batsman" },
+      { id: 19, name: "Glenn Maxwell", role: "batsman" },
+      { id: 20, name: "Pat Cummins", role: "bowler" },
+      { id: 21, name: "Josh Hazlewood", role: "bowler" },
+      { id: 22, name: "Mitchell Starc", role: "bowler" }
+    ],
+    "South Africa": [
+      { id: 23, name: "Aiden Markram", role: "batsman" },
+      { id: 24, name: "Reeza Hendricks", role: "batsman" },
+      { id: 25, name: "Heinrich Klaasen", role: "batsman" },
+      { id: 26, name: "David Miller", role: "batsman" },
+      { id: 27, name: "Anrich Nortje", role: "bowler" },
+      { id: 28, name: "Kagiso Rabada", role: "bowler" },
+      { id: 29, name: "Gerald Coetzee", role: "bowler" }
+    ],
+    England: [
+      { id: 30, name: "Jos Buttler", role: "batsman" },
+      { id: 31, name: "Liam Livingstone", role: "batsman" },
+      { id: 32, name: "Dawid Malan", role: "batsman" },
+      { id: 33, name: "Harry Brook", role: "batsman" },
+      { id: 34, name: "Jofra Archer", role: "bowler" },
+      { id: 35, name: "Adil Rashid", role: "bowler" },
+      { id: 36, name: "Reece Topley", role: "bowler" }
+    ],
+    "West Indies": [
+      { id: 37, name: "Nicholas Pooran", role: "batsman" },
+      { id: 38, name: "Roston Chase", role: "batsman" },
+      { id: 39, name: "Shai Hope", role: "batsman" },
+      { id: 40, name: "Shimron Hetmyer", role: "batsman" },
+      { id: 41, name: "Romesh Shepherd", role: "bowler" },
+      { id: 42, name: "Akeal Hosein", role: "bowler" },
+      { id: 43, name: "Alzarri Joseph", role: "bowler" }
+    ],
+    "Sri Lanka": [
+      { id: 44, name: "Angelo Mathews", role: "batsman" },
+      { id: 45, name: "Pathum Nissanka", role: "batsman" },
+      { id: 46, name: "Kusal Mendis", role: "batsman" },
+      { id: 47, name: "Dhananjaya de Silva", role: "batsman" },
+      { id: 48, name: "Wanindu Hasaranga", role: "bowler" },
+      { id: 49, name: "Lahiru Kumara", role: "bowler" },
+      { id: 50, name: "Maheesh Theekshana", role: "bowler" }
+    ],
+    Afghanistan: [
+      { id: 51, name: "Mohammad Nabi", role: "batsman" },
+      { id: 52, name: "Rahmanullah Gurbaz", role: "batsman" },
+      { id: 53, name: "Asghar Afghan", role: "batsman" },
+      { id: 54, name: "Ibrahim Zadran", role: "batsman" },
+      { id: 55, name: "Rashid Khan", role: "bowler" },
+      { id: 56, name: "Naveen-ul-Haq", role: "bowler" },
+      { id: 57, name: "Mujeeb Ur Rahman", role: "bowler" }
+    ],
+    "New Zealand": [
+      { id: 58, name: "Kane Williamson", role: "batsman" },
+      { id: 59, name: "Devon Conway", role: "batsman" },
+      { id: 60, name: "Mark Chapman", role: "batsman" },
+      { id: 61, name: "Daryl Mitchell", role: "batsman" },
+      { id: 62, name: "Tim Southee", role: "bowler" },
+      { id: 63, name: "Trent Boult", role: "bowler" },
+      { id: 64, name: "Ish Sodhi", role: "bowler" }
+    ],
+    "United States": [
+      { id: 65, name: "Aaron Jones", role: "batsman" },
+      { id: 66, name: "Ishan Malhotra", role: "batsman" },
+      { id: 67, name: "Steven Taylor", role: "batsman" },
+      { id: 68, name: "Corey Anderson", role: "batsman" },
+      { id: 69, name: "Ali Khan", role: "bowler" },
+      { id: 70, name: "Harmeet Singh", role: "bowler" },
+      { id: 71, name: "Saurabh Netravalkar", role: "bowler" }
+    ],
+    Scotland: [
+      { id: 72, name: "Kyle Coetzer", role: "batsman" },
+      { id: 73, name: "Richie Berrington", role: "batsman" },
+      { id: 74, name: "Calum MacLeod", role: "batsman" },
+      { id: 75, name: "George Munsey", role: "batsman" },
+      { id: 76, name: "Mark Watt", role: "bowler" },
+      { id: 77, name: "Chris Sole", role: "bowler" },
+      { id: 78, name: "Safyaan Sharif", role: "bowler" }
+    ],
+    Ireland: [
+      { id: 79, name: "Andrew Balbirnie", role: "batsman" },
+      { id: 80, name: "Paul Stirling", role: "batsman" },
+      { id: 81, name: "Lorcan Tucker", role: "batsman" },
+      { id: 82, name: "Harry Tector", role: "batsman" },
+      { id: 83, name: "Josh Little", role: "bowler" },
+      { id: 84, name: "Mark Adair", role: "bowler" },
+      { id: 85, name: "Barry McCarthy", role: "bowler" }
+    ],
+    Namibia: [
+      { id: 86, name: "Stephen Baard", role: "batsman" },
+      { id: 87, name: "Craig Williams", role: "batsman" },
+      { id: 88, name: "Zane Green", role: "batsman" },
+      { id: 89, name: "Jan Frylinck", role: "batsman" },
+      { id: 90, name: "Bernard Scholtz", role: "bowler" },
+      { id: 91, name: "Ruben van Heerden", role: "bowler" },
+      { id: 92, name: "Tangeni Lungameni", role: "bowler" }
+    ],
+    Netherlands: [
+      { id: 93, name: "Max O'Dowd", role: "batsman" },
+      { id: 94, name: "Vikram Singh", role: "batsman" },
+      { id: 95, name: "Bas de Leede", role: "batsman" },
+      { id: 96, name: "Tom Cooper", role: "batsman" },
+      { id: 97, name: "Paul van Meekeren", role: "bowler" },
+      { id: 98, name: "Roelof van der Merwe", role: "bowler" },
+      { id: 99, name: "Fred Klaassen", role: "bowler" }
+    ],
+    Zimbabwe: [
+      { id: 100, name: "Craig Ervine", role: "batsman" },
+      { id: 101, name: "Regis Chakabva", role: "batsman" },
+      { id: 102, name: "Sean Williams", role: "batsman" },
+      { id: 103, name: "Sikandar Raza", role: "batsman" },
+      { id: 104, name: "Blessing Muzarabani", role: "bowler" },
+      { id: 105, name: "Luke Jongwe", role: "bowler" },
+      { id: 106, name: "Donald Tiripano", role: "bowler" }
+    ],
+    Oman: [
+      { id: 107, name: "Jatinder Singh", role: "batsman" },
+      { id: 108, name: "Aqib Ilyas", role: "batsman" },
+      { id: 109, name: "Kashyap Prajapati", role: "batsman" },
+      { id: 110, name: "Sameet Patel", role: "batsman" },
+      { id: 111, name: "Bilal Khan", role: "bowler" },
+      { id: 112, name: "Kaleemullah Khan", role: "bowler" },
+      { id: 113, name: "Fayyaz Butt", role: "bowler" }
+    ],
+    Canada: [
+      { id: 114, name: "Aaron Johnson", role: "batsman" },
+      { id: 115, name: "Saad Bin Zafar", role: "batsman" },
+      { id: 116, name: "Rizwan Cheema", role: "batsman" },
+      { id: 117, name: "Nikhil Dutta", role: "batsman" },
+      { id: 118, name: "Khalid Ahmadullah", role: "bowler" },
+      { id: 119, name: "Jeremy Gordon", role: "bowler" },
+      { id: 120, name: "Junaid Siddiqui", role: "bowler" }
+    ],
+    Nepal: [
+      { id: 121, name: "Rohit Paudel", role: "batsman" },
+      { id: 122, name: "Gyanendra Malla", role: "batsman" },
+      { id: 123, name: "Anil Sah", role: "batsman" },
+      { id: 124, name: "Dipendra Singh Airee", role: "batsman" },
+      { id: 125, name: "Sompal Kami", role: "bowler" },
+      { id: 126, name: "Sandeep Lamichhane", role: "bowler" },
+      { id: 127, name: "Abinash Bohara", role: "bowler" }
+    ],
+    Italy: [
+      { id: 128, name: "Alessandro Campagna", role: "batsman" },
+      { id: 129, name: "Gianluca Navarrete", role: "batsman" },
+      { id: 130, name: "Paul Stirling", role: "batsman" },
+      { id: 131, name: "Varun Chopra", role: "batsman" },
+      { id: 132, name: "Jaspreet Singh", role: "bowler" },
+      { id: 133, name: "Aftab Alam", role: "bowler" },
+      { id: 134, name: "George Garrett", role: "bowler" }
+    ],
+    "United Arab Emirates": [
+      { id: 135, name: "Muhammad Waseem", role: "batsman" },
+      { id: 136, name: "Aryan Lakra", role: "batsman" },
+      { id: 137, name: "Babar Hayat", role: "batsman" },
+      { id: 138, name: "Vriitya Aravind", role: "batsman" },
+      { id: 139, name: "Zahoor Khan", role: "bowler" },
+      { id: 140, name: "Karthik Meiyappan", role: "bowler" },
+      { id: 141, name: "Ahmed Raza", role: "bowler" }
+    ]
+  }
 
   useEffect(() => {
     loadMatches()
@@ -77,61 +226,96 @@ export default function Admin() {
     }))
   }
 
-  const handleSaveResult = async (matchId) => {
-    const data = formData[matchId]
+const handleSaveResult = async (matchId) => {
+  const data = formData[matchId]
 
-    if (!data || !data.batsman || !data.bowler || !data.winner) {
-      setError(`Match ${matchId}: Please fill all fields`)
-      setTimeout(() => setError(''), 3000)
-      return
-    }
-
-    setLoading(true)
-    setError('')
-    setMessage('')
-
-    try {
-      const response = await fetch(`${API_URL}/matches/result/${matchId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          batsman: parseInt(data.batsman),
-          bowler: parseInt(data.bowler),
-          winner: data.winner
-        })
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save result')
-      }
-
-      setMessage(`✓ Match ${matchId} result saved!`)
-      
-      // Clear form for this match
-      setFormData(prev => {
-        const updated = { ...prev }
-        delete updated[matchId]
-        return updated
-      })
-
-      // Reload after 1.5 seconds
-      setTimeout(() => {
-        loadMatches()
-      }, 1500)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+  if (!data || !data.batsman || !data.bowler || !data.winner) {
+    setError(`Match ${matchId}: Please fill all fields`)
+    setTimeout(() => setError(''), 3000)
+    return
   }
 
-  const getBatsmen = () => allPlayers.filter(p => p.role === 'batsman')
-  const getBowlers = () => allPlayers.filter(p => p.role === 'bowler')
+  setLoading(true)
+  setError('')
+  setMessage('')
+
+  try {
+    const url = `${API_URL}/matches/result/${matchId}`
+    console.log('Making request to:', url)
+    console.log('Body:', {
+      batsman: parseInt(data.batsman),
+      bowler: parseInt(data.bowler),
+      winner: data.winner
+    })
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        batsman: parseInt(data.batsman),
+        bowler: parseInt(data.bowler),
+        winner: data.winner
+      })
+    })
+
+    const result = await response.json()
+    console.log('Response:', result, 'Status:', response.status)
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to save result')
+    }
+
+    setMessage(`✓ Match ${matchId} result saved!`)
+    
+    // Clear form for this match
+    setFormData(prev => {
+      const updated = { ...prev }
+      delete updated[matchId]
+      return updated
+    })
+
+    // Reload after 1.5 seconds
+    setTimeout(() => {
+      loadMatches()
+    }, 1500)
+  } catch (err) {
+    console.error('Error saving result:', err)
+    setError(err.message)
+  } finally {
+    setLoading(false)
+  }
+}
+
+  const getBatsmen = () => {
+    const allBatsmen = []
+    Object.values(allPlayers).forEach(team => {
+      team.forEach(player => {
+        if (player.role === 'batsman') allBatsmen.push(player)
+      })
+    })
+    return allBatsmen
+  }
+
+  const getBowlers = () => {
+    const allBowlers = []
+    Object.values(allPlayers).forEach(team => {
+      team.forEach(player => {
+        if (player.role === 'bowler') allBowlers.push(player)
+      })
+    })
+    return allBowlers
+  }
+
+  const getPlayerName = (id) => {
+    for (const team of Object.values(allPlayers)) {
+      const player = team.find(p => p.id === id)
+      if (player) return player.name
+    }
+    return 'Unknown'
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -218,7 +402,7 @@ export default function Admin() {
                       <option value="">Select...</option>
                       {getBatsmen().map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.name} ({p.team})
+                          {p.name}
                         </option>
                       ))}
                     </select>
@@ -235,7 +419,7 @@ export default function Admin() {
                       <option value="">Select...</option>
                       {getBowlers().map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.name} ({p.team})
+                          {p.name}
                         </option>
                       ))}
                     </select>
