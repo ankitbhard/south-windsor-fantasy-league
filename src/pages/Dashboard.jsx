@@ -1,12 +1,10 @@
 import { useNavigate, Link } from "react-router-dom"
-import { useContext, useEffect, useState } from "react"
-import { DraftContext } from "../context/DraftContext"
+import { useEffect, useState } from "react"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { calculateScores, draftTeams } = useContext(DraftContext)
 
   const userEmail = localStorage.getItem('userEmail') || 'Guest'
   const userId = localStorage.getItem('userId')
@@ -14,10 +12,18 @@ export default function Dashboard() {
 
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [leaderboard, setLeaderboard] = useState([])
+  const [userScore, setUserScore] = useState(0)
+  const [userRank, setUserRank] = useState('-')
 
-  // Check if user is admin
+  // Check if user is admin and load leaderboard
   useEffect(() => {
     checkAdminStatus()
+    loadLeaderboard()
+    
+    // Refresh leaderboard every 10 seconds
+    const interval = setInterval(loadLeaderboard, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   const checkAdminStatus = async () => {
@@ -28,7 +34,6 @@ export default function Dashboard() {
         }
       })
       
-      // If response is OK, user is admin
       if (response.ok) {
         setIsAdmin(true)
       } else {
@@ -37,7 +42,87 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error checking admin status:', error)
       setIsAdmin(false)
-    } finally {
+    }
+  }
+
+  const loadLeaderboard = async () => {
+    try {
+      // Fetch all drafts
+      const draftsResponse = await fetch(`${API_URL}/drafts/all`)
+      if (!draftsResponse.ok) throw new Error('Failed to load drafts')
+      const drafts = await draftsResponse.json()
+
+      // Fetch all match results
+      const resultsResponse = await fetch(`${API_URL}/matches/results/all`)
+      if (!resultsResponse.ok) throw new Error('Failed to load results')
+      const results = await resultsResponse.json()
+
+      // Create map of match results for quick lookup
+      const resultsMap = {}
+      results.forEach(result => {
+        resultsMap[result.matchId] = result
+      })
+
+      // Calculate scores for each draft
+      const leaderboardData = drafts.map(draft => {
+        let totalScore = 0
+
+        // Check player predictions
+        const players = draft.players || {}
+        for (const key in players) {
+          const [matchId, role] = key.split('-')
+          const player = players[key]
+          const result = resultsMap[parseInt(matchId)]
+
+          if (result) {
+            if (role === 'batsman' && result.batsman === player.id) {
+              totalScore += 100
+            } else if (role === 'bowler' && result.bowler === player.id) {
+              totalScore += 50
+            }
+          }
+        }
+
+        // Check match winner predictions
+        const winners = draft.winners || {}
+        for (const matchId in winners) {
+          const predictedWinner = winners[matchId]
+          const result = resultsMap[parseInt(matchId)]
+
+          if (result && result.winner === predictedWinner) {
+            totalScore += 200
+          }
+        }
+
+        return {
+          ...draft,
+          totalScore,
+          playersSelected: Object.keys(players).length,
+          winnersSelected: Object.keys(winners).length
+        }
+      })
+
+      // Sort by score descending
+      leaderboardData.sort((a, b) => b.totalScore - a.totalScore)
+
+      // Add rank
+      const rankedLeaderboard = leaderboardData.map((item, index) => ({
+        ...item,
+        rank: index + 1
+      }))
+
+      setLeaderboard(rankedLeaderboard)
+
+      // Find current user's score and rank
+      const currentUser = rankedLeaderboard.find(item => item.email === userEmail)
+      if (currentUser) {
+        setUserScore(currentUser.totalScore)
+        setUserRank(currentUser.rank)
+      }
+
+      setLoading(false)
+    } catch (error) {
+      console.error('Error loading leaderboard:', error)
       setLoading(false)
     }
   }
@@ -48,13 +133,6 @@ export default function Dashboard() {
     localStorage.removeItem('userEmail')
     navigate("/")
   }
-
-  const scores = calculateScores()
-  const rankings = Object.values(scores)
-    .sort((a, b) => b.totalScore - a.totalScore)
-    .map((score, index) => ({ ...score, rank: index + 1 }))
-
-  const currentUserScore = scores[userId] || { totalScore: 0, rank: '-', email: userEmail }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -102,8 +180,8 @@ export default function Dashboard() {
           
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-xl font-bold mb-2">📊 Your Score</h3>
-            <p className="text-3xl font-bold text-blue-600">{currentUserScore.totalScore}</p>
-            <p className="text-gray-600 text-sm">points</p>
+            <p className="text-3xl font-bold text-blue-600">{userScore}</p>
+            <p className="text-gray-600 text-sm">Rank: #{userRank}</p>
           </div>
 
           {isAdmin && (
@@ -124,65 +202,73 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Current User Draft Status */}
-        {draftTeams.find(d => d.userId === userId) ? (
-          <div className="bg-green-100 border border-green-400 p-4 rounded-lg mb-8">
-            <p className="text-green-700">
-              ✓ <strong>You have a draft saved!</strong> You can edit it during the edit window (6PM-12AM).
-            </p>
-          </div>
-        ) : (
-          <div className="bg-yellow-100 border border-yellow-400 p-4 rounded-lg mb-8">
-            <p className="text-yellow-700">
-              ⚠ You haven't created a draft yet. <Link to="/draft" className="font-bold underline">Click here to start</Link>
-            </p>
-          </div>
-        )}
-
         {/* Leaderboard */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-2xl font-bold mb-4">🏆 Leaderboard</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-2xl font-bold">🏆 Leaderboard</h3>
+            <button
+              onClick={loadLeaderboard}
+              className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+            >
+              🔄 Refresh
+            </button>
+          </div>
           
-          {rankings.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-600 mt-2">Loading leaderboard...</p>
+            </div>
+          ) : leaderboard.length === 0 ? (
             <p className="text-gray-600">No drafts yet. Be the first to play!</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-200">
                   <tr>
-                    <th className="px-4 py-3 text-left">Rank</th>
-                    <th className="px-4 py-3 text-left">Email</th>
-                    <th className="px-4 py-3 text-right">Score</th>
-                    <th className="px-4 py-3 text-right">Joined</th>
+                    <th className="px-4 py-3 text-left font-bold">Rank</th>
+                    <th className="px-4 py-3 text-left font-bold">Player</th>
+                    <th className="px-4 py-3 text-center font-bold">Selections</th>
+                    <th className="px-4 py-3 text-right font-bold">Score</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rankings.map((score) => (
+                  {leaderboard.slice(0, 10).map((draft) => (
                     <tr 
-                      key={score.userId} 
+                      key={draft._id} 
                       className={`
-                        ${score.rank === 1 ? "bg-yellow-100" : score.rank === 2 ? "bg-gray-100" : score.rank === 3 ? "bg-orange-100" : "hover:bg-gray-50"}
-                        ${score.userId === userId ? "border-l-4 border-blue-600" : ""}
+                        ${draft.rank === 1 ? "bg-yellow-100" : draft.rank === 2 ? "bg-gray-100" : draft.rank === 3 ? "bg-orange-100" : "hover:bg-gray-50"}
+                        ${draft.email === userEmail ? "border-l-4 border-blue-600" : ""}
                       `}
                     >
                       <td className="px-4 py-3 font-bold">
-                        {score.rank === 1 && "🥇"}
-                        {score.rank === 2 && "🥈"}
-                        {score.rank === 3 && "🥉"}
-                        {score.rank > 3 && `#${score.rank}`}
+                        {draft.rank === 1 && "🥇"}
+                        {draft.rank === 2 && "🥈"}
+                        {draft.rank === 3 && "🥉"}
+                        {draft.rank > 3 && `#${draft.rank}`}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium">{score.email}</span>
-                        {score.userId === userId && <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded">YOU</span>}
+                        <span className="font-medium">{draft.email}</span>
+                        {draft.email === userEmail && <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded">YOU</span>}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-lg">{score.totalScore}</td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-600">
-                        {new Date(score.createdAt).toLocaleDateString()}
+                      <td className="px-4 py-3 text-center">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm font-bold">
+                          {draft.playersSelected + draft.winnersSelected}
+                        </span>
                       </td>
+                      <td className="px-4 py-3 text-right font-bold text-lg">{draft.totalScore}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {leaderboard.length > 10 && (
+            <div className="text-center mt-4">
+              <Link to="/leaderboard" className="text-blue-600 hover:text-blue-800 font-bold">
+                View Full Leaderboard →
+              </Link>
             </div>
           )}
         </div>
@@ -204,7 +290,7 @@ export default function Dashboard() {
               <p className="text-2xl font-bold text-purple-600">+200 pts</p>
             </div>
           </div>
-          <p className="text-gray-600 text-sm mt-4">Maximum possible: <strong>3,500 points</strong> (10 matches × 350 pts each)</p>
+          <p className="text-gray-600 text-sm mt-4">Maximum possible: <strong>14,000 points</strong> (40 matches × 350 pts each)</p>
         </div>
 
         {/* Edit Window Information */}
@@ -214,11 +300,18 @@ export default function Dashboard() {
             <p className="text-gray-700 mb-2">
               <strong>When can you edit your draft?</strong>
             </p>
-            <p className="text-lg font-bold text-purple-600">6:00 PM - 12:00 AM (Midnight)</p>
+            <p className="text-lg font-bold text-purple-600">24/7 - Available Anytime</p>
             <p className="text-gray-600 text-sm mt-2">
-              You can create a draft anytime, but editing is only allowed during the edit window. Outside this time, your draft is locked.
+              You can create and edit your draft anytime. Add predictions daily and build your score incrementally!
             </p>
           </div>
+        </div>
+
+        {/* Auto-refresh info */}
+        <div className="bg-purple-100 border border-purple-400 p-4 rounded-lg mt-8 text-center">
+          <p className="text-purple-700 text-sm">
+            🔄 Leaderboard auto-refreshes every 10 seconds
+          </p>
         </div>
       </div>
     </div>
