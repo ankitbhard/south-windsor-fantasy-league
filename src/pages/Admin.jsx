@@ -73,6 +73,7 @@ export default function Admin() {
   }
 
   const handleResultSubmit = async (matchId) => {
+    matchId = parseInt(matchId)
     console.log('Submitting result for match:', matchId)
     
     const matchResult = results[matchId]
