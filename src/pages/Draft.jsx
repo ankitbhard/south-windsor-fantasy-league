@@ -211,17 +211,9 @@ export default function Draft() {
     checkEditWindow()
   }, [])
 
-  const checkEditWindow = () => {
-    if (!DRAFT_CONFIG.ALLOW_24_HOUR_EDITING) {
-      setCanEdit(true)
-      return
-    }
-
-    const now = new Date()
-    const hour = now.getHours()
-    const isOpen = hour >= DRAFT_CONFIG.EDIT_WINDOW_START_HOUR || hour < DRAFT_CONFIG.EDIT_WINDOW_END_HOUR
-    setCanEdit(isOpen)
-  }
+const checkEditWindow = () => {
+  setCanEdit(isEditWindowOpen())
+}
 
   const loadMatches = async () => {
     try {
@@ -270,7 +262,7 @@ export default function Draft() {
   }
 
   const handleSaveDraft = async () => {
-    if (!canEdit && DRAFT_CONFIG.ALLOW_24_HOUR_EDITING) {
+    if (!canEdit && !DRAFT_CONFIG.ALLOW_24_HOUR_EDITING) {
       setError('Edit window closed')
       return
     }
@@ -330,7 +322,7 @@ export default function Draft() {
           </div>
         )}
 
-        {!canEdit && DRAFT_CONFIG.ALLOW_24_HOUR_EDITING && (
+        {!canEdit && !DRAFT_CONFIG.ALLOW_24_HOUR_EDITING && (
           <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
             ⚠️ Edit window closed! You can add selections between {DRAFT_CONFIG.WINDOW_MESSAGE}
           </div>
