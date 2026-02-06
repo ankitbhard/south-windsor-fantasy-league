@@ -2,7 +2,6 @@ import { useContext, useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { DraftContext } from "../context/DraftContext"
 import { DRAFT_CONFIG, isEditWindowOpen, getEditWindowText } from "../config/draftConfig"
-import { allPlayers } from "../data/players"
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 
 export default function Draft() {
