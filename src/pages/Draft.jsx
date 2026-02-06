@@ -212,7 +212,7 @@ export default function Draft() {
   }, [])
 
 const checkEditWindow = () => {
-  setCanEdit(isEditWindowOpen())
+  setCanEdit(true)
 }
 
   const loadMatches = async () => {
