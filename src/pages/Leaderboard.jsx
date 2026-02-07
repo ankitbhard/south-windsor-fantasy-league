@@ -12,7 +12,6 @@ export default function Leaderboard() {
 
   useEffect(() => {
     loadLeaderboard()
-    // Refresh leaderboard every 10 seconds to show live updates
     const interval = setInterval(loadLeaderboard, 10000)
     return () => clearInterval(interval)
   }, [])
@@ -26,59 +25,92 @@ export default function Leaderboard() {
       if (!draftsResponse.ok) throw new Error('Failed to load drafts')
       const drafts = await draftsResponse.json()
 
-      // Fetch all match results
-      const resultsResponse = await fetch(`${API_URL}/matches/results/all`)
-      if (!resultsResponse.ok) throw new Error('Failed to load results')
-      const results = await resultsResponse.json()
+      // Fetch all player performances
+      const performanceResponse = await fetch(`${API_URL}/playerPerformance/all`)
+      if (!performanceResponse.ok) throw new Error('Failed to load performances')
+      const performances = await performanceResponse.json()
 
-      // Create map of match results for quick lookup
-      const resultsMap = {}
-      results.forEach(result => {
-        resultsMap[result.matchId] = result
+      // Fetch all match winners
+      const winnersResponse = await fetch(`${API_URL}/matches/winners`)
+      if (!winnersResponse.ok) throw new Error('Failed to load winners')
+      const winners = await winnersResponse.json()
+
+      // Create maps for quick lookup
+      const performanceMap = {}
+      performances.forEach(perf => {
+        if (!performanceMap[perf.matchId]) {
+          performanceMap[perf.matchId] = {}
+        }
+        performanceMap[perf.matchId][perf.playerId] = perf
+      })
+
+      const winnersMap = {}
+      winners.forEach(w => {
+        winnersMap[w.matchId] = w.winner
       })
 
       // Calculate scores for each draft
       const leaderboardData = drafts.map(draft => {
         let totalScore = 0
+        let breakdown = {
+          batsman: 0,
+          bowler: 0,
+          winner: 0
+        }
 
-        // Check player predictions
+        // Check batsman predictions
         const players = draft.players || {}
         for (const key in players) {
           const [matchId, role] = key.split('-')
           const player = players[key]
-          const result = resultsMap[parseInt(matchId)]
+          const matchPerformances = performanceMap[parseInt(matchId)] || {}
+          const playerPerf = matchPerformances[player.id]
 
-          if (result) {
-            if (role === 'batsman' && result.batsman === player.id) {
-              totalScore += 100
-            } else if (role === 'bowler' && result.bowler === player.id) {
-              totalScore += 50
-            }
+          if (playerPerf && role === 'batsman' && playerPerf.role === 'batsman') {
+            // User predicted correct batsman, award runs scored
+            const runsPoints = playerPerf.runs || 0
+            totalScore += runsPoints
+            breakdown.batsman += runsPoints
           }
         }
 
-        // Check match winner predictions
-        const winners = draft.winners || {}
-        for (const matchId in winners) {
-          const predictedWinner = winners[matchId]
-          const result = resultsMap[parseInt(matchId)]
+        // Check bowler predictions
+        for (const key in players) {
+          const [matchId, role] = key.split('-')
+          const player = players[key]
+          const matchPerformances = performanceMap[parseInt(matchId)] || {}
+          const playerPerf = matchPerformances[player.id]
 
-          if (result && result.winner === predictedWinner) {
+          if (playerPerf && role === 'bowler' && playerPerf.role === 'bowler') {
+            // User predicted correct bowler, award wickets * 25
+            const wicketsPoints = (playerPerf.wickets || 0) * 25
+            totalScore += wicketsPoints
+            breakdown.bowler += wicketsPoints
+          }
+        }
+
+        // Check match winner predictions - 200 points
+        const winnerPredictions = draft.winners || {}
+        for (const matchId in winnerPredictions) {
+          const predictedWinner = winnerPredictions[matchId]
+          const actualWinner = winnersMap[parseInt(matchId)]
+
+          if (actualWinner && predictedWinner === actualWinner) {
             totalScore += 200
+            breakdown.winner += 200
           }
         }
 
         return {
           ...draft,
           totalScore,
+          breakdown,
           playersSelected: Object.keys(players).length,
-          winnersSelected: Object.keys(winners).length
+          winnersSelected: Object.keys(winnerPredictions).length
         }
       })
 
-      // Sort by score descending
       leaderboardData.sort((a, b) => b.totalScore - a.totalScore)
-
       setLeaderboard(leaderboardData)
       setLoading(false)
     } catch (err) {
@@ -191,6 +223,10 @@ export default function Leaderboard() {
                             <p className="text-xs text-gray-500">
                               Last updated: {new Date(draft.updatedAt).toLocaleDateString()}
                             </p>
+                            {/* Score breakdown */}
+                            <p className="text-xs text-gray-500 mt-1">
+                              Runs: {draft.breakdown.batsman} | Wickets: {draft.breakdown.bowler} | Winner: {draft.breakdown.winner}
+                            </p>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
@@ -202,7 +238,7 @@ export default function Leaderboard() {
                           <span className="text-2xl font-bold text-purple-600">
                             {draft.totalScore}
                           </span>
-                          <p className="text-xs text-gray-500">/ 14,000 pts</p>
+                          <p className="text-xs text-gray-500">points</p>
                         </td>
                       </tr>
                     )
@@ -213,24 +249,24 @@ export default function Leaderboard() {
 
             {/* Legend */}
             <div className="bg-blue-50 p-4 rounded-lg text-sm text-gray-700">
-              <p className="font-bold mb-2">💡 Scoring Legend</p>
+              <p className="font-bold mb-3">💡 Scoring System</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="font-bold text-green-600">+100 pts</p>
-                  <p>Correct Batsman</p>
+                  <p className="font-bold text-green-600">Best Batsman</p>
+                  <p>= Runs Scored</p>
+                  <p className="text-xs text-gray-500">e.g., 84 runs = 84 pts</p>
                 </div>
                 <div>
-                  <p className="font-bold text-blue-600">+50 pts</p>
-                  <p>Correct Bowler</p>
+                  <p className="font-bold text-orange-600">Best Bowler</p>
+                  <p>= Wickets × 25</p>
+                  <p className="text-xs text-gray-500">e.g., 3 wickets = 75 pts</p>
                 </div>
                 <div>
-                  <p className="font-bold text-purple-600">+200 pts</p>
-                  <p>Correct Winner</p>
+                  <p className="font-bold text-purple-600">Match Winner</p>
+                  <p>= Fixed 200</p>
+                  <p className="text-xs text-gray-500">+200 for correct winner</p>
                 </div>
               </div>
-              <p className="text-xs text-gray-600 mt-3">
-                Max per match: 350 pts | Max total (40 matches): 14,000 pts
-              </p>
             </div>
 
             {/* Auto-refresh info */}
