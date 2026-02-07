@@ -8,21 +8,14 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log('Leaderboard component mounted')
     loadData()
   }, [])
 
   const loadData = async () => {
     try {
-      console.log('Starting data load...')
       const drafts = await fetch(`${API_URL}/drafts/all`).then(r => r.json())
-      console.log('Drafts:', drafts.length)
-      
       const perfs = await fetch(`${API_URL}/playerPerformance/all`).then(r => r.json())
-      console.log('Perfs:', perfs.length)
-      
       const winners = await fetch(`${API_URL}/matches/winners/all`).then(r => r.json())
-      console.log('Winners:', winners.length)
 
       const perfMap = {}
       perfs.forEach(p => {
@@ -56,7 +49,6 @@ export default function Leaderboard() {
       })
 
       scores.sort((a, b) => b.score - a.score)
-      console.log('Final scores:', scores)
       setLeaderboard(scores)
       setLoading(false)
     } catch (e) {
@@ -65,9 +57,7 @@ export default function Leaderboard() {
     }
   }
 
-  console.log('Rendering, leaderboard length:', leaderboard.length, 'loading:', loading)
-
-  if (loading) return <div className="p-8 text-center text-lg">Loading...</div>
+  if (loading) return <div className="p-8 text-center">Loading...</div>
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -80,7 +70,7 @@ export default function Leaderboard() {
 
       <div className="max-w-4xl mx-auto p-6">
         {leaderboard.length === 0 ? (
-          <div className="bg-white p-8 rounded text-center text-lg font-bold">No data found</div>
+          <div className="bg-white p-8 rounded text-center">No scores yet</div>
         ) : (
           <div className="bg-white rounded shadow-md overflow-hidden">
             <table className="w-full">
@@ -94,9 +84,9 @@ export default function Leaderboard() {
               <tbody>
                 {leaderboard.map((d, i) => (
                   <tr key={d._id} className="border-t hover:bg-gray-50">
-                    <td className="px-6 py-4 font-bold text-lg">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</td>
-                    <td className="px-6 py-4 font-bold">{d.email}</td>
-                    <td className="px-6 py-4 text-right font-bold text-2xl text-purple-600">{d.score}</td>
+                    <td className="px-6 py-4 font-bold">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</td>
+                    <td className="px-6 py-4">{d.email}</td>
+                    <td className="px-6 py-4 text-right font-bold text-xl text-purple-600">{d.score}</td>
                   </tr>
                 ))}
               </tbody>
