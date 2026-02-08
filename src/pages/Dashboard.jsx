@@ -5,8 +5,8 @@ const API_URL = "https://fantasy-cricket-api-4a1225a6b78d.herokuapp.com/api"
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
   const [stats, setStats] = useState({ drafts: 0, score: 0 })
+  const [leaderboard, setLeaderboard] = useState([])
   const [loading, setLoading] = useState(true)
 
   const userEmail = localStorage.getItem('userEmail')
@@ -17,24 +17,76 @@ export default function Dashboard() {
       navigate('/login')
       return
     }
-    loadStats()
+    loadData()
   }, [token, navigate])
 
-  const loadStats = async () => {
+  const loadData = async () => {
     try {
-      const draftsResponse = await fetch(`${API_URL}/drafts/all`)
-      if (!draftsResponse.ok) throw new Error('Failed to load drafts')
-      const drafts = await draftsResponse.json()
+      const drafts = await fetch(`${API_URL}/drafts/all`).then(r => r.json())
+      const perfs = await fetch(`${API_URL}/playerPerformance/all`).then(r => r.json())
+      const winners = await fetch(`${API_URL}/matches/winners/all`).then(r => r.json())
 
-      const userDrafts = drafts.filter(d => d.email === userEmail)
-      
+      // Build performance map
+      const perfMap = {}
+      perfs.forEach(p => {
+        if (!perfMap[p.matchId]) perfMap[p.matchId] = {}
+        perfMap[p.matchId][p.playerId] = p
+      })
+
+      // Build winners map
+      const winMap = {}
+      winners.forEach(w => { winMap[w.matchId] = w.winner })
+
+      // Calculate scores for all drafts
+      const scores = drafts.map(d => {
+        let score = 0
+        const players = d.players || {}
+        const wins = d.winners || {}
+
+        // Score batsmen
+        for (const key in players) {
+          const [mid, role] = key.split('-')
+          const p = players[key]
+          const perf = perfMap[parseInt(mid)]?.[p.id]
+          if (perf && perf.role === 'batsman' && role === 'batsman') {
+            score += perf.runs || 0
+          }
+        }
+
+        // Score bowlers
+        for (const key in players) {
+          const [mid, role] = key.split('-')
+          const p = players[key]
+          const perf = perfMap[parseInt(mid)]?.[p.id]
+          if (perf && perf.role === 'bowler' && role === 'bowler') {
+            score += (perf.wickets || 0) * 25
+          }
+        }
+
+        // Score winners
+        for (const mid in wins) {
+          if (winMap[parseInt(mid)] === wins[mid]) {
+            score += 200
+          }
+        }
+
+        return { ...d, totalScore: score }
+      })
+
+      // Sort by score
+      scores.sort((a, b) => b.totalScore - a.totalScore)
+
+      // Get user's stats
+      const userDrafts = scores.filter(d => d.email === userEmail)
       setStats({
         drafts: userDrafts.length,
-        score: userDrafts.reduce((sum, d) => sum + (d.totalScore || 0), 0)
+        score: userDrafts.reduce((sum, d) => sum + d.totalScore, 0)
       })
+
+      setLeaderboard(scores)
       setLoading(false)
     } catch (err) {
-      console.error('Error loading stats:', err)
+      console.error('Error:', err)
       setLoading(false)
     }
   }
@@ -53,6 +105,8 @@ export default function Dashboard() {
       </div>
     )
   }
+
+  const userRank = leaderboard.findIndex(d => d.email === userEmail) + 1
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -84,24 +138,45 @@ export default function Dashboard() {
             <p className="text-4xl font-bold text-blue-600">{stats.score}</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <p className="text-gray-600 text-sm">Rank</p>
-            <p className="text-4xl font-bold text-green-600">#1</p>
+            <p className="text-gray-600 text-sm">Your Rank</p>
+            <p className="text-4xl font-bold text-green-600">#{userRank}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <Link to="/draft" className="bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
             📝 Create Draft
           </Link>
-          <Link to="/leaderboard" className="bg-purple-500 hover:bg-purple-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
-            🏆 Leaderboard
+          <Link to="/drafts/editor" className="bg-green-500 hover:bg-green-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
+            📝 Edit Draft by Match
           </Link>
           <Link to="/admin" className="bg-red-500 hover:bg-red-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
             ⚙️ Admin
           </Link>
-          <button onClick={handleLogout} className="bg-gray-500 hover:bg-gray-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
-            🚪 Logout
-          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-blue-600 text-white p-4">
+            <h3 className="text-2xl font-bold">🏆 Leaderboard</h3>
+          </div>
+          <table className="w-full">
+            <thead className="bg-gray-100 border-b">
+              <tr>
+                <th className="px-6 py-3 text-left">Rank</th>
+                <th className="px-6 py-3 text-left">Player</th>
+                <th className="px-6 py-3 text-right">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboard.map((d, i) => (
+                <tr key={d._id} className={`border-t ${d.email === userEmail ? 'bg-yellow-100 font-bold' : ''}`}>
+                  <td className="px-6 py-4 font-bold">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</td>
+                  <td className="px-6 py-4">{d.email}</td>
+                  <td className="px-6 py-4 text-right font-bold text-lg text-purple-600">{d.totalScore}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

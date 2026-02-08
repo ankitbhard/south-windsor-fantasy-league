@@ -8,6 +8,7 @@ import Team from './pages/Team';
 import Admin from './pages/Admin';
 import AdminPanel from './pages/AdminPanel';
 import ViewDraft from './pages/ViewDraft';
+import DraftEditor from './pages/DraftEditor';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin-panel" element={<AdminPanel />} />
           <Route path="/view-draft" element={<ViewDraft />} />
+          <Route path="/drafts/editor" element={<DraftEditor />} />
         </Routes>
       </Router>
     </DraftProvider>
