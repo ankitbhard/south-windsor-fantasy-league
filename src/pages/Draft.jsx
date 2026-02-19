@@ -394,16 +394,11 @@ const checkEditWindow = () => {
     }
   }
 
-  // Get players from both teams in a match
-  const getPlayersForMatch = (team1, team2, role) => {
-    const team1Players = allPlayers[team1]?.filter(p => p.role === role) || []
-    const team2Players = allPlayers[team2]?.filter(p => p.role === role) || []
+  // Get players from both teams in a match (all players, not filtered by role)
+  const getPlayersForMatch = (team1, team2) => {
+    const team1Players = allPlayers[team1] || []
+    const team2Players = allPlayers[team2] || []
     return [...team1Players, ...team2Players]
-  }
-
-  // Check if player is already selected
-  const isPlayerSelected = (playerId) => {
-    return Object.values(selections).some(selection => selection && selection.id === playerId)
   }
 
   const handlePlayerSelect = (matchId, role, playerId, playerName, team) => {
@@ -509,26 +504,25 @@ const checkEditWindow = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Batsman Selection */}
                 <div>
-                  <label className="block text-lg font-bold mb-3">🏏 Best Batsman (+100 pts)</label>
+                  <label className="block text-lg font-bold mb-3">🏏 Best Player (+100 pts)</label>
                   <select
                     value={selections[`${match.matchId}-batsman`]?.id || ''}
                     onChange={(e) => {
                       const playerId = parseInt(e.target.value)
-                      const player = getPlayersForMatch(match.team1, match.team2, 'batsman').find(p => p.id === playerId)
+                      const player = getPlayersForMatch(match.team1, match.team2).find(p => p.id === playerId)
                       if (player) {
                         handlePlayerSelect(match.matchId, 'batsman', player.id, player.name, player.team)
                       }
                     }}
                     className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
                   >
-                    <option value="">Select Batsman...</option>
-                    {getPlayersForMatch(match.team1, match.team2, 'batsman').map(player => (
+                    <option value="">Select Player...</option>
+                    {getPlayersForMatch(match.team1, match.team2).map(player => (
                       <option 
                         key={player.id} 
                         value={player.id}
-                        disabled={isPlayerSelected(player.id) && selections[`${match.matchId}-batsman`]?.id !== player.id}
                       >
-                        {player.name} ({player.team})
+                        {player.name}
                       </option>
                     ))}
                   </select>
@@ -539,26 +533,25 @@ const checkEditWindow = () => {
 
                 {/* Bowler Selection */}
                 <div>
-                  <label className="block text-lg font-bold mb-3">🎯 Best Bowler (+50 pts)</label>
+                  <label className="block text-lg font-bold mb-3">🎯 Best Player 2 (+50 pts)</label>
                   <select
                     value={selections[`${match.matchId}-bowler`]?.id || ''}
                     onChange={(e) => {
                       const playerId = parseInt(e.target.value)
-                      const player = getPlayersForMatch(match.team1, match.team2, 'bowler').find(p => p.id === playerId)
+                      const player = getPlayersForMatch(match.team1, match.team2).find(p => p.id === playerId)
                       if (player) {
                         handlePlayerSelect(match.matchId, 'bowler', player.id, player.name, player.team)
                       }
                     }}
                     className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
                   >
-                    <option value="">Select Bowler...</option>
-                    {getPlayersForMatch(match.team1, match.team2, 'bowler').map(player => (
+                    <option value="">Select Player...</option>
+                    {getPlayersForMatch(match.team1, match.team2).map(player => (
                       <option 
                         key={player.id} 
                         value={player.id}
-                        disabled={isPlayerSelected(player.id) && selections[`${match.matchId}-bowler`]?.id !== player.id}
                       >
-                        {player.name} ({player.team})
+                        {player.name}
                       </option>
                     ))}
                   </select>
