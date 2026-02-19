@@ -385,6 +385,34 @@ export default function Admin() {
     }))
   }
 
+  const [clearConfirm, setClearConfirm] = useState(false)
+
+  const handleClearAllResults = async () => {
+    if (!clearConfirm) {
+      setClearConfirm(true)
+      return
+    }
+    setLoading(true)
+    setError('')
+    setMessage('')
+    try {
+      const response = await fetch(`${API_URL}/matches/results/all`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Failed to clear results')
+      setMessage('✓ All results cleared! Matches reset to upcoming.')
+      setClearConfirm(false)
+      setTimeout(() => loadMatches(), 1500)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+      setClearConfirm(false)
+    }
+  }
+
   const handleSaveResult = async (matchId) => {
     const data = formData[matchId]
 
@@ -408,7 +436,9 @@ export default function Admin() {
         body: JSON.stringify({
           batsman: parseInt(data.batsman),
           bowler: parseInt(data.bowler),
-          winner: data.winner
+          winner: data.winner,
+          batsmanRuns: parseInt(data.batsmanRuns) || 0,
+          bowlerWickets: parseInt(data.bowlerWickets) || 0
         })
       })
 
@@ -499,7 +529,28 @@ export default function Admin() {
           </div>
         )}
 
-        <h2 className="text-3xl font-bold mb-6">Set Match Results</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold">Set Match Results</h2>
+          {!clearConfirm ? (
+            <button
+              onClick={handleClearAllResults}
+              disabled={loading}
+              className="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700 disabled:opacity-50"
+            >
+              🗑️ Clear All Results
+            </button>
+          ) : (
+            <div className="flex gap-2 items-center">
+              <span className="text-red-700 font-bold text-sm">Sure? This resets everything!</span>
+              <button onClick={handleClearAllResults} disabled={loading} className="bg-red-700 text-white px-3 py-2 rounded font-bold text-sm hover:bg-red-800 disabled:opacity-50">
+                Yes, Clear All
+              </button>
+              <button onClick={() => setClearConfirm(false)} className="bg-gray-500 text-white px-3 py-2 rounded font-bold text-sm hover:bg-gray-600">
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
 
         {matches.length === 0 ? (
           <div className="bg-white p-8 rounded-lg shadow-md text-center">
@@ -534,36 +585,49 @@ export default function Admin() {
                       <>
                         {/* Batsman - Only from these 2 teams */}
                         <div>
-                          <label className="block text-sm font-bold mb-2">🏏 Best Batsman (+100 pts)</label>
+                          <label className="block text-sm font-bold mb-2">🏏 Best Batsman (runs scored)</label>
                           <select
                             value={formData[match.matchId]?.batsman || ''}
                             onChange={(e) => handleInputChange(match.matchId, 'batsman', e.target.value)}
-                            className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                            className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"
                           >
-                            <option value="">Select...</option>
+                            <option value="">Select batsman...</option>
                             {getPlayersForMatch(match.team1, match.team2, 'batsman').map(p => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
+                              <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
                           </select>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="Runs scored (e.g. 72)"
+                            value={formData[match.matchId]?.batsmanRuns || ''}
+                            onChange={(e) => handleInputChange(match.matchId, 'batsmanRuns', e.target.value)}
+                            className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                          />
                         </div>
 
                         {/* Bowler - Only from these 2 teams */}
                         <div>
-                          <label className="block text-sm font-bold mb-2">🎯 Best Bowler (+50 pts)</label>
+                          <label className="block text-sm font-bold mb-2">🎯 Best Bowler (wickets × 25 pts)</label>
                           <select
                             value={formData[match.matchId]?.bowler || ''}
                             onChange={(e) => handleInputChange(match.matchId, 'bowler', e.target.value)}
-                            className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                            className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"
                           >
-                            <option value="">Select...</option>
+                            <option value="">Select bowler...</option>
                             {getPlayersForMatch(match.team1, match.team2, 'bowler').map(p => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
+                              <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
                           </select>
+                          <input
+                            type="number"
+                            min="0"
+                            max="10"
+                            placeholder="Wickets taken (e.g. 3)"
+                            value={formData[match.matchId]?.bowlerWickets || ''}
+                            onChange={(e) => handleInputChange(match.matchId, 'bowlerWickets', e.target.value)}
+                            className="w-full border-2 border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                          />
                         </div>
 
                         {/* Winner */}
@@ -621,11 +685,11 @@ export default function Admin() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-600">Batsman</p>
-              <p className="text-2xl font-bold text-green-600">100</p>
+              <p className="text-lg font-bold text-green-600">Runs scored</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Bowler</p>
-              <p className="text-2xl font-bold text-blue-600">50</p>
+              <p className="text-lg font-bold text-blue-600">Wickets × 25</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Winner</p>
