@@ -359,8 +359,24 @@ export default function Admin() {
 }
 
   useEffect(() => {
-    loadMatches()
+    checkAdminAndLoad()
   }, [])
+
+  const checkAdminAndLoad = async () => {
+    try {
+      const adminRes = await fetch(`${API_URL}/admin/check`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const adminData = await adminRes.json()
+      if (!adminData.isAdmin) {
+        navigate('/dashboard')
+        return
+      }
+      loadMatches()
+    } catch (err) {
+      navigate('/dashboard')
+    }
+  }
 
   const loadMatches = async () => {
     try {

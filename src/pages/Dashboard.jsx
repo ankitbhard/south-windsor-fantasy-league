@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ drafts: 0, score: 0 })
   const [leaderboard, setLeaderboard] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const userEmail = localStorage.getItem('userEmail')
   const token = localStorage.getItem('token')
@@ -40,6 +41,11 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
+      const adminCheck = await fetch(`${API_URL}/admin/check`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(r => r.json())
+      setIsAdmin(adminCheck.isAdmin === true)
+
       const drafts = await fetch(`${API_URL}/drafts/all`).then(r => r.json())
       const perfs = await fetch(`${API_URL}/playerPerformance/all`).then(r => r.json())
       const winners = await fetch(`${API_URL}/matches/winners/all`).then(r => r.json())
@@ -169,9 +175,11 @@ export default function Dashboard() {
           <Link to="/drafts/editor" className="bg-green-500 hover:bg-green-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
             📝 Edit Draft by Match
           </Link>
-          <Link to="/admin" className="bg-red-500 hover:bg-red-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
-            ⚙️ Admin
-          </Link>
+          {isAdmin && (
+            <Link to="/admin" className="bg-red-500 hover:bg-red-600 text-white p-6 rounded-lg shadow-md text-center font-bold">
+              ⚙️ Admin
+            </Link>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
