@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { isEditWindowOpen } from "../config/draftConfig"
+import { allPlayers } from "../../allPlayers_Official"
 
 const API_URL = "https://fantasy-cricket-api-4a1225a6b78d.herokuapp.com/api"
 
@@ -9,32 +11,24 @@ export default function DraftEditor() {
   const token = localStorage.getItem('token')
 
   const [matches, setMatches] = useState([])
-  const [players, setPlayers] = useState([])
   const [currentMatchIdx, setCurrentMatchIdx] = useState(0)
   const [draft, setDraft] = useState({ players: {}, winners: {} })
   const [loading, setLoading] = useState(true)
   const [timeLeft, setTimeLeft] = useState(null)
-
-  useEffect(() => {
-    if (!token) {
-      navigate('/login')
-      return
-    }
-    loadData()
-  }, [token, navigate])
 
   const loadData = async () => {
     try {
       const matchesRes = await fetch(`${API_URL}/matches/all`).then(r => r.json())
       setMatches(matchesRes.sort((a, b) => a.matchId - b.matchId))
 
-      const playersRes = await fetch(`${API_URL}/players/all`).then(r => r.json())
-      setPlayers(playersRes)
-
-      const draftsRes = await fetch(`${API_URL}/drafts/all`).then(r => r.json())
-      const userDraft = draftsRes.find(d => d.email === userEmail)
-      if (userDraft) {
-        setDraft(userDraft)
+      const draftRes = await fetch(`${API_URL}/drafts/my-draft`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (draftRes.ok) {
+        const data = await draftRes.json()
+        if (data.draft) {
+          setDraft(data.draft)
+        }
       }
 
       setLoading(false)
@@ -45,12 +39,25 @@ export default function DraftEditor() {
   }
 
   useEffect(() => {
+    if (!token) {
+      navigate('/login')
+      return
+    }
+    loadData()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     if (matches.length === 0) return
 
     const match = matches[currentMatchIdx]
     const deadline = new Date(match.editDeadline)
     const now = new Date()
     const diff = deadline - now
+
+    if (!match.editDeadline) {
+      setTimeLeft({ open: true })
+      return
+    }
 
     if (diff > 0) {
       const mins = Math.floor(diff / 60000)
@@ -76,12 +83,16 @@ export default function DraftEditor() {
   }, [matches, currentMatchIdx])
 
   const currentMatch = matches[currentMatchIdx]
-  const canEdit = timeLeft !== null
+  const canEdit = isEditWindowOpen()
 
-  const teamPlayers = {
-    batting: players.filter(p => p.role === 'batsman'),
-    bowling: players.filter(p => p.role === 'bowler')
-  }
+  const matchPlayers = currentMatch
+    ? [
+        ...(allPlayers[currentMatch.team1] || []).map(p => ({ ...p, team: currentMatch.team1 })),
+        ...(allPlayers[currentMatch.team2] || []).map(p => ({ ...p, team: currentMatch.team2 }))
+      ]
+    : []
+  const batsmanList = matchPlayers
+  const bowlerList = matchPlayers
 
   const selectedBatsman = draft.players[`${currentMatch?.matchId}-batsman`]
   const selectedBowler = draft.players[`${currentMatch?.matchId}-bowler`]
@@ -119,14 +130,13 @@ export default function DraftEditor() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`${API_URL}/drafts/update`, {
-        method: 'PUT',
+      const response = await fetch(`${API_URL}/drafts/save`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          email: userEmail,
           players: draft.players,
           winners: draft.winners
         })
@@ -134,6 +144,9 @@ export default function DraftEditor() {
 
       if (response.ok) {
         alert('Draft saved!')
+      } else {
+        const data = await response.json()
+        alert('Error: ' + (data.error || 'Failed to save'))
       }
     } catch (err) {
       console.error('Error saving:', err)
@@ -183,7 +196,7 @@ export default function DraftEditor() {
               </div>
             ) : (
               <div className="bg-green-100 text-green-700 px-4 py-2 rounded font-bold">
-                ⏱️ {timeLeft?.mins}m {timeLeft?.secs}s Left
+                {timeLeft?.open ? '✅ Open' : `⏱️ ${timeLeft?.mins}m ${timeLeft?.secs}s Left`}
               </div>
             )}
           </div>
@@ -213,7 +226,7 @@ export default function DraftEditor() {
             )}
             
             <div className="max-h-48 overflow-y-auto">
-              {teamPlayers.batting.map(p => (
+              {batsmanList.map(p => (
                 <button
                   key={p.id}
                   onClick={() => handleSelectBatsman(p)}
@@ -244,7 +257,7 @@ export default function DraftEditor() {
             )}
             
             <div className="max-h-48 overflow-y-auto">
-              {teamPlayers.bowling.map(p => (
+              {bowlerList.map(p => (
                 <button
                   key={p.id}
                   onClick={() => handleSelectBowler(p)}

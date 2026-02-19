@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"
 
 export default function Draft() {
   const navigate = useNavigate()
-  const { saveDraft, getUserDraft } = useContext(DraftContext)
+  const { saveDraft } = useContext(DraftContext)
 
   const userId = localStorage.getItem('userId')
   const userEmail = localStorage.getItem('userEmail')
@@ -380,11 +380,16 @@ const checkEditWindow = () => {
       const data = await response.json()
       setMatches(data)
 
-      // Load existing draft if available
-      const existingDraft = getUserDraft(userId)
-      if (existingDraft) {
-        setSelections(existingDraft.players || {})
-        setWinners(existingDraft.winners || {})
+      // Load existing draft directly from API with auth
+      const draftRes = await fetch(`${API_URL}/drafts/my-draft`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (draftRes.ok) {
+        const draftData = await draftRes.json()
+        if (draftData.draft) {
+          setSelections(draftData.draft.players || {})
+          setWinners(draftData.draft.winners || {})
+        }
       }
 
       setLoading(false)

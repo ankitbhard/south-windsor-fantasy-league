@@ -3,6 +3,24 @@ import { Link, useNavigate } from "react-router-dom"
 
 const API_URL = "https://fantasy-cricket-api-4a1225a6b78d.herokuapp.com/api"
 
+const AVATAR_COLORS = [
+  'bg-purple-500', 'bg-blue-500', 'bg-green-500', 'bg-red-500',
+  'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
+  'bg-orange-500', 'bg-cyan-500'
+]
+
+function Avatar({ email, size = 'md' }) {
+  const initials = (email || '?').charAt(0).toUpperCase()
+  const colorIdx = (email || '').split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % AVATAR_COLORS.length
+  const color = AVATAR_COLORS[colorIdx]
+  const sizeClass = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-10 h-10 text-sm'
+  return (
+    <div className={`${sizeClass} ${color} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
+      {initials}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ drafts: 0, score: 0 })
@@ -113,7 +131,8 @@ export default function Dashboard() {
       <nav className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 shadow-lg">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">🏏 Fantasy Cricket</h1>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-3 items-center">
+            <Avatar email={userEmail} />
             <span className="text-sm">{userEmail}</span>
             <button
               onClick={handleLogout}
@@ -171,7 +190,12 @@ export default function Dashboard() {
               {leaderboard.map((d, i) => (
                 <tr key={d._id} className={`border-t ${d.email === userEmail ? 'bg-yellow-100 font-bold' : ''}`}>
                   <td className="px-6 py-4 font-bold">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</td>
-                  <td className="px-6 py-4">{d.email}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar email={d.email} size="sm" />
+                      <span>{d.email}</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-right font-bold text-lg text-purple-600">{d.totalScore}</td>
                 </tr>
               ))}

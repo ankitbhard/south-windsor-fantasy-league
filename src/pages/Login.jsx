@@ -56,15 +56,31 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen relative flex items-center justify-center">
+
+      {/* Collage Background */}
+      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+        <img src="/cricket.png" alt="" className="w-full h-full object-cover" />
+        <img src="/group.jpeg" alt="" className="w-full h-full object-cover" />
+        <img src="/group.jpeg" alt="" className="w-full h-full object-cover scale-x-[-1]" />
+        <img src="/cricket.png" alt="" className="w-full h-full object-cover scale-x-[-1]" />
+      </div>
+
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/55" />
+
+      {/* Title above form */}
+      <div className="relative z-10 flex flex-col items-center w-full px-4">
+        <div className="mb-4 text-center">
+          <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">🏏 South Windsor Fantasy Cricket</h1>
+          <p className="text-orange-300 text-sm mt-1 font-semibold">T20 World Cup 2026</p>
+        </div>
+
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
+        className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl w-full max-w-md"
       >
-        <h1 className="text-2xl font-bold mb-2 text-center">
-          Fantasy Cricket
-        </h1>
-        <p className="text-center text-gray-600 text-sm mb-6">
+        <p className="text-center text-gray-700 text-sm font-semibold mb-6">
           {isSignUp ? "Create an account" : "Login to your account"}
         </p>
 
@@ -127,6 +143,7 @@ export default function Login() {
           </button>
         </p>
       </form>
+      </div>
     </div>
   )
 }

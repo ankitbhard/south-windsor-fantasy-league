@@ -32,11 +32,11 @@ export default function Invite() {
         <div className="mb-6 space-y-2 text-sm">
           <div className="flex items-start gap-2">
             <span className="text-green-600 font-bold">✓</span>
-            <span><strong>100 pts</strong> - Correct batsman</span>
+            <span><strong>Runs scored</strong> - Best batsman</span>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-blue-600 font-bold">✓</span>
-            <span><strong>50 pts</strong> - Correct bowler</span>
+            <span><strong>Wickets × 25 pts</strong> - Best bowler</span>
           </div>
           <div className="flex items-start gap-2">
             <span className="text-purple-600 font-bold">✓</span>
